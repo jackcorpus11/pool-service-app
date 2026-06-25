@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { supabase } from "../lib/supabase";
-
-type Client = {
-  id: string;
-  name: string;
-  address: string;
-  poolType: string;
-  poolSize: string;
-  phone: string;
-};
+import {
+  createClient,
+  deleteClientById,
+  fetchClients,
+  updateClient,
+} from "../lib/clients";
+import { Client } from "../types/client";
 
 export default function Index() {
   const [name, setName] = useState("");
@@ -21,27 +18,15 @@ export default function Index() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadClients() {
-      const { data, error } = await supabase
-      .from("clients")
-      .select("*")
-      .order("created_at", { ascending: true });
-      if (error) {
-        console.log("Error loading clients:", error.message);
-      } else {
-        setClients(
-          data.map((row) => ({
-            id: row.id,
-            name: row.name,
-            address: row.address,
-            poolType: row.pool_type,
-            poolSize: row.pool_size,
-            phone: row.phone,
-          }))
-        );
+    async function load() {
+      try {
+        const data = await fetchClients();
+        setClients(data);
+      } catch (error) {
+        console.log("Error loading clients:", (error as Error).message);
       }
     }
-    loadClients();
+    load();
   }, []);
 
   function resetForm() {
@@ -61,72 +46,21 @@ export default function Index() {
       address: address.trim(),
       poolType: poolType.trim(),
       poolSize: poolSize.trim(),
-       phone: phone.trim(),
+      phone: phone.trim(),
     };
 
-    if (editingId === null) {
-      const { data, error } = await supabase
-        .from("clients")
-        .insert({
-          name: details.name,
-          address: details.address,
-          pool_type: details.poolType,
-          pool_size: details.poolSize,
-          phone: details.phone,
-        })
-        .select()
-        .single();
-
-    if (error) {
-      console.log("Error adding client:", error.message);
-      return;
-    }
-    setClients([
-      ...clients,
-      {
-        id: data.id,
-        name: data.name,
-        address: data.address,
-        poolType: data.pool_type,
-        poolSize: data.pool_size,
-        phone: data.phone,
+    try {
+      if (editingId === null) {
+        const newClient = await createClient(details);
+        setClients([...clients, newClient]);
+      } else {
+        const updated = await updateClient(editingId, details);
+        setClients(clients.map((c) => (c.id === editingId ? updated : c)));
       }
-    ]);
-    } else {
-      const { data, error } = await supabase
-        .from("clients")
-        .update({
-          name: details.name,
-          address: details.address,
-          pool_type: details.poolType,
-          pool_size: details.poolSize,
-          phone: details.phone,
-        })
-        .eq("id", editingId)
-        .select()
-        .single();
-
-        if (error) {
-          console.log("Error updating client:", error.message);
-          return;
-        }
-
-        setClients(
-          clients.map((c) =>
-            c.id === editingId
-              ? {
-                  ...c,
-                  name: data.name,
-                  address: data.address,
-                  poolType: data.pool_type,
-                  poolSize: data.pool_size,
-                  phone: data.phone,
-                }
-              : c
-          )
-        );
+      resetForm();
+    } catch (error) {
+      console.log("Error saving client:", (error as Error).message);
     }
-    resetForm();
   }
 
   function startEdit(client: Client) {
@@ -139,18 +73,13 @@ export default function Index() {
   }
 
   async function deleteClient(id: string) {
-    const { error } = await supabase
-      .from("clients")
-      .delete()
-      .eq("id", id);
-
-      if (error) {
-        console.log("Error delecting clinet:", error.message);
-        return;
-      }
-
+    try {
+      await deleteClientById(id);
       setClients(clients.filter((c) => c.id !== id));
       if (editingId === id) resetForm();
+    } catch (error) {
+      console.log("Error deleting client:", (error as Error).message);
+    }
   }
 
   return (
