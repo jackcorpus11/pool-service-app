@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import {
@@ -9,10 +10,10 @@ import {
 import { Client } from "../types/client";
 
 export default function Index() {
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
-  const [poolType, setPoolType] = useState("");
-  const [poolSize, setPoolSize] = useState("");
   const [phone, setPhone] = useState("");
   const [clients, setClients] = useState<Client[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -32,8 +33,6 @@ export default function Index() {
   function resetForm() {
     setName("");
     setAddress("");
-    setPoolType("");
-    setPoolSize("");
     setPhone("");
     setEditingId(null);
   }
@@ -44,8 +43,6 @@ export default function Index() {
     const details = {
       name: name.trim(),
       address: address.trim(),
-      poolType: poolType.trim(),
-      poolSize: poolSize.trim(),
       phone: phone.trim(),
     };
 
@@ -66,8 +63,6 @@ export default function Index() {
   function startEdit(client: Client) {
     setName(client.name);
     setAddress(client.address);
-    setPoolType(client.poolType);
-    setPoolSize(client.poolSize);
     setPhone(client.phone);
     setEditingId(client.id);
   }
@@ -84,16 +79,10 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Clients</Text>
-
       <TextInput style={styles.input} placeholder="Client name" placeholderTextColor="#7a8a9a"
         value={name} onChangeText={setName} />
       <TextInput style={styles.input} placeholder="Address" placeholderTextColor="#7a8a9a"
         value={address} onChangeText={setAddress} />
-      <TextInput style={styles.input} placeholder="Pool type (e.g. concrete, vinyl)" placeholderTextColor="#7a8a9a"
-        value={poolType} onChangeText={setPoolType} />
-      <TextInput style={styles.input} placeholder="Pool size (gallons)" placeholderTextColor="#7a8a9a"
-        value={poolSize} onChangeText={setPoolSize} keyboardType="numeric" />
       <TextInput style={styles.input} placeholder="Phone number" placeholderTextColor="#7a8a9a"
         value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
 
@@ -115,14 +104,10 @@ export default function Index() {
         data={clients}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Pressable style={styles.card} onPress={() => router.push(`/client/${item.id}`)}>
             <Text style={styles.cardName}>{item.name}</Text>
             <Text style={styles.cardDetail}>{item.phone || "No phone"}</Text>
             <Text style={styles.cardDetail}>{item.address || "No address"}</Text>
-            <Text style={styles.cardDetail}>
-              {item.poolType || "Unknown type"}
-              {item.poolSize ? ` · ${item.poolSize} gal` : ""}
-            </Text>
 
             <View style={styles.cardButtons}>
               <Pressable style={styles.editButton} onPress={() => startEdit(item)}>
@@ -132,7 +117,7 @@ export default function Index() {
                 <Text style={styles.deleteText}>Delete</Text>
               </Pressable>
             </View>
-          </View>
+          </Pressable>
         )}
         ListEmptyComponent={<Text style={styles.empty}>No clients yet. Add one above.</Text>}
       />
@@ -141,8 +126,7 @@ export default function Index() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#0e1a2b", padding: 24, paddingTop: 64 },
-  title: { fontSize: 28, fontWeight: "bold", color: "#4aa3df", marginBottom: 20 },
+  container: { flex: 1, backgroundColor: "#0e1a2b", padding: 24 },
   input: {
     backgroundColor: "#1b2a3d", color: "#ffffff", fontSize: 16,
     paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10,
