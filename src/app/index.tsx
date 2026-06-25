@@ -21,9 +21,7 @@ export default function Index() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadClients(){
-      console.log("key:", process.env.EXPO_PUBLIC_SUPABASE_KEY);
-      console.log("url:", process.env.EXPO_PUBLIC_SUPABASE_URL);
+    async function loadClients() {
       const { data, error } = await supabase
       .from("clients")
       .select("*")
