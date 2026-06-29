@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { checkRange, POOL_RANGES } from "../lib/chemicalRanges";
+import { checkRange, HOT_TUB_RANGES, POOL_RANGES } from "../lib/chemicalRanges";
 import { fetchAllPoolsWithClient, PoolWithClient } from "../lib/pools";
 import { completeVisit } from "../lib/readings";
 import {
@@ -133,6 +133,13 @@ export default function Schedule() {
     return "#7a8a9a";
   }
 
+  function kindLabel(kind: string) {
+    if (kind === "hot tub") return "Hot Tub";
+    if (kind === "spa") return "Spa";
+    if (kind === "pool") return "Pool";
+    return "Unknown";
+  }
+
   return (
     <View style={styles.container}>
       <Calendar
@@ -189,10 +196,11 @@ export default function Schedule() {
           return (
             <View style={[styles.jobCard, isDone && styles.jobCardDone]}>
               <View style={styles.jobTop}>
-                <Text style={styles.jobClient}>{item.clientName}</Text>
+                <Text style={styles.jobClient}>{item.clientName} {kindLabel(item.poolKind)}</Text>
                 {isDone ? <Text style={styles.doneCheck}>✓ Done</Text> : null}
               </View>
               {item.clientAddress ? <Text style={styles.jobLine}>📍 {item.clientAddress}</Text> : null}
+              <Text style={styles.jobKind}>{kindLabel(item.poolKind)}</Text>
 
               {editingVisitId === item.id ? (
                 <View style={styles.poolList}>
@@ -214,8 +222,9 @@ export default function Schedule() {
                   <Text style={styles.formLabel}>Chemical readings</Text>
                   {READING_FIELDS.map((field) => {
                     const value = reading[field.key] as number | null;
-                    const status = checkRange(field.key as string, value, false);
-                    const r = POOL_RANGES[field.key as string];
+                    const status = checkRange(field.key as string, value, item.poolKind === " hot tub"|| item.poolKind === "spa");
+                    const isHotTub = item.poolKind == "hot tub" || item.poolKind == "spa";
+                    const r = isHotTub ? HOT_TUB_RANGES[field.key as string] : POOL_RANGES[field.key as string];
                     return (
                       <View key={field.key} style={styles.readingRow}>
                         <Text style={styles.readingLabel}>{field.label}</Text>
@@ -317,4 +326,5 @@ const styles = StyleSheet.create({
   jobStatus: { color: "#8fd6a0", fontSize: 13, textTransform: "capitalize" },
   removeText: { color: "#d9534f", fontSize: 13 },
   empty: { color: "#7a8a9a", fontSize: 15, textAlign: "center", marginTop: 20 },
+  jobKind: { color: "#4aa3df", fontSize: 14, marginTop: 3, fontWeight: "600" },
 });

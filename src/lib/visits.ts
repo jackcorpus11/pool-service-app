@@ -5,18 +5,19 @@ import { supabase } from "./supabase";
 export type VisitWithDetails = ServiceVisit & {
   clientName: string;
   clientAddress: string;
+  poolKind: string;
 };
 
 const WEEKDAY_NUMBERS: Record<string, number> = {
   sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
   thursday: 4, friday: 5, saturday: 6,
 };
-
+ 
 // READ — visits joined with client name + address, for the schedule
 export async function fetchVisitsWithDetails(): Promise<VisitWithDetails[]> {
   const { data, error } = await supabase
     .from("service_visits")
-    .select("*, pools(clients(name, address))")
+    .select("*, pools(kind, clients(name, address))")
     .order("visit_date", { ascending: true });
 
   if (error) throw error;
@@ -28,6 +29,7 @@ export async function fetchVisitsWithDetails(): Promise<VisitWithDetails[]> {
     visitDate: row.visit_date,
     status: row.status,
     jobType: row.job_type,
+    poolKind: row.pools?.kind ?? "pool",
     clientName: row.pools?.clients?.name ?? "Unknown client",
     clientAddress: row.pools?.clients?.address ?? "",
   }));
