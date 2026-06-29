@@ -2,17 +2,17 @@ import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Calendar } from "react-native-calendars";
-import { checkRange, HOT_TUB_RANGES, POOL_RANGES } from "../lib/chemicalRanges";
-import { fetchAllPoolsWithClient, PoolWithClient } from "../lib/pools";
-import { completeVisit } from "../lib/readings";
+import { checkRange, HOT_TUB_RANGES, POOL_RANGES } from "../../lib/chemicalRanges";
+import { fetchAllPoolsWithClient, PoolWithClient } from "../../lib/pools";
+import { completeVisit } from "../../lib/readings";
 import {
   createOneOffVisit,
   deleteVisitById,
   fetchVisitsWithDetails,
   updateVisitJobType,
   VisitWithDetails,
-} from "../lib/visits";
-import { ReadingInput } from "../types/reading";
+} from "../../lib/visits";
+import { ReadingInput } from "../../types/reading";
 
 const JOB_TYPES = ["cleaning", "liner change", "repair", "opening", "closing"];
 

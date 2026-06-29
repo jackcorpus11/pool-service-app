@@ -2,14 +2,14 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import {
-  createClient,
-  deleteClientById,
-  fetchClients,
-  updateClient,
-} from "../lib/clients";
-import { Client } from "../types/client";
+    createClient,
+    deleteClientById,
+    fetchClients,
+    updateClient,
+} from "../../lib/clients";
+import { Client } from "../../types/client";
 
-export default function Index() {
+export default function Clients() {
   const router = useRouter();
 
   const [name, setName] = useState("");
@@ -39,13 +39,7 @@ export default function Index() {
 
   async function saveClient() {
     if (name.trim() === "") return;
-
-    const details = {
-      name: name.trim(),
-      address: address.trim(),
-      phone: phone.trim(),
-    };
-
+    const details = { name: name.trim(), address: address.trim(), phone: phone.trim() };
     try {
       if (editingId === null) {
         const newClient = await createClient(details);
@@ -108,7 +102,6 @@ export default function Index() {
             <Text style={styles.cardName}>{item.name}</Text>
             <Text style={styles.cardDetail}>{item.phone || "No phone"}</Text>
             <Text style={styles.cardDetail}>{item.address || "No address"}</Text>
-
             <View style={styles.cardButtons}>
               <Pressable style={styles.editButton} onPress={() => startEdit(item)}>
                 <Text style={styles.editText}>Edit</Text>
@@ -127,36 +120,20 @@ export default function Index() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0e1a2b", padding: 24 },
-  input: {
-    backgroundColor: "#1b2a3d", color: "#ffffff", fontSize: 16,
-    paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10,
-    borderWidth: 1, borderColor: "#33485f", marginBottom: 10,
-  },
+  input: { backgroundColor: "#1b2a3d", color: "#ffffff", fontSize: 16, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10, borderWidth: 1, borderColor: "#33485f", marginBottom: 10 },
   formButtons: { flexDirection: "row", gap: 10, marginBottom: 20 },
-  button: {
-    flex: 1, backgroundColor: "#4aa3df", alignItems: "center",
-    paddingVertical: 14, borderRadius: 10,
-  },
+  button: { flex: 1, backgroundColor: "#4aa3df", alignItems: "center", paddingVertical: 14, borderRadius: 10 },
   buttonText: { color: "#0e1a2b", fontSize: 16, fontWeight: "600" },
-  cancelButton: {
-    paddingVertical: 14, paddingHorizontal: 20, borderRadius: 10,
-    borderWidth: 1, borderColor: "#33485f", alignItems: "center",
-  },
+  cancelButton: { paddingVertical: 14, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: "#33485f", alignItems: "center" },
   cancelText: { color: "#cccccc", fontSize: 16 },
   list: { flex: 1 },
   card: { backgroundColor: "#1b2a3d", padding: 16, borderRadius: 10, marginBottom: 10 },
   cardName: { color: "#ffffff", fontSize: 18, fontWeight: "600", marginBottom: 4 },
   cardDetail: { color: "#7a8a9a", fontSize: 15, marginTop: 2 },
   cardButtons: { flexDirection: "row", gap: 10, marginTop: 12 },
-  editButton: {
-    paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8,
-    borderWidth: 1, borderColor: "#4aa3df",
-  },
+  editButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: "#4aa3df" },
   editText: { color: "#4aa3df", fontSize: 14, fontWeight: "600" },
-  deleteButton: {
-    paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8,
-    borderWidth: 1, borderColor: "#d9534f",
-  },
+  deleteButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: "#d9534f" },
   deleteText: { color: "#d9534f", fontSize: 14, fontWeight: "600" },
   empty: { color: "#7a8a9a", fontSize: 16, textAlign: "center", marginTop: 40 },
 });
