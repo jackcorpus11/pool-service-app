@@ -5,7 +5,7 @@ import { Calendar } from "react-native-calendars";
 import { checkRange, HOT_TUB_RANGES, POOL_RANGES } from "../../lib/chemicalRanges";
 import { fetchAllPoolsWithClient, PoolWithClient } from "../../lib/pools";
 import { completeVisit } from "../../lib/readings";
-import { buildRouteUrl, MAX_RELIABLE_STOPS } from "../../lib/routing";
+import { buildRouteUrl, MAX_RELIABLE_STOPS, orderStopsByNearest } from "../../lib/routing";
 import {
   createOneOffVisit,
   deleteVisitById,
@@ -14,6 +14,7 @@ import {
   VisitWithDetails,
 } from "../../lib/visits";
 import { ReadingInput } from "../../types/reading";
+
 
 const JOB_TYPES = ["cleaning", "liner change", "repair", "opening", "closing"];
 
@@ -142,20 +143,16 @@ export default function Schedule() {
   }
 
   async function sendRoute() {
-    console.log("Coords check:", dayVisits.map((v) => ({
-      name: v.clientName,
-      lat: v.latitude,
-      lng: v.longitude
-    })));
-    const url = buildRouteUrl(dayVisits);
-    if (!url) {
-      console.log("No route URL generated");
-      return;
-    } try {
-      await Linking.openURL(url);
-    } catch (error) {
-      console.log("Error opening route URL:", (error as Error).message);
-    }
+   const orderedStops = orderStopsByNearest(dayVisits);
+   const url = buildRouteUrl(orderedStops);
+   if (!url) {
+    console.log("No located stops to route");
+    return;
+   } try {
+    await Linking.openURL(url);
+   } catch (error) {
+    console.log("Error opening route URL:", (error as Error).message);
+   }
   }
 
   return (
