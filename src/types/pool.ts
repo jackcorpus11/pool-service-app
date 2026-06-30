@@ -9,4 +9,5 @@ export type Pool = {
     waterFeatures: string;
     chemicalNotes: string;
     lastServiced: string | null;
+    gallons: number | null;
 };

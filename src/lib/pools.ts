@@ -18,6 +18,7 @@ function rowToPool(row: any): Pool {
     waterFeatures: row.water_features ?? "",
     chemicalNotes: row.chemical_notes ?? "",
     lastServiced: row.last_serviced,
+    gallons: row.gallons,
   };
 }
 
@@ -44,6 +45,7 @@ export async function createPool(details: Omit<Pool, "id" | "lastServiced">): Pr
       access_notes: details.accessNotes,
       water_features: details.waterFeatures,
       chemical_notes: details.chemicalNotes,
+      gallons: details.gallons,
     })
     .select()
     .single();

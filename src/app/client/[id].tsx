@@ -4,6 +4,7 @@ import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-na
 import { Calendar } from "react-native-calendars";
 import { createPlan, deletePlanById, fetchPlansForPool } from "../../lib/plans";
 import { createPool, deletePoolById, fetchPoolsForClient } from "../../lib/pools";
+import { calculateGallons } from "../../lib/poolVolume";
 import { generateVisitsForPlan } from "../../lib/visits";
 import { ServicePlan, Weekday } from "../../types/plan";
 import { Pool } from "../../types/pool";
@@ -16,6 +17,12 @@ export default function ClientDetail() {
 
   // new-pool form fields
   const [kind, setKind] = useState("pool");
+  const [gallons, setGallons] = useState("");
+  const [showDimensions, setShowDimensions] = useState(false);
+  const [shape, setShape] = useState<"rectangle" | "round" | "oval">("rectangle");
+  const [length, setLength] = useState("");
+  const [width, setWidth] = useState("");
+  const [avgDepth, setAvgDepth] = useState("");
   const [poolType, setPoolType] = useState("");
   const [poolSize, setPoolSize] = useState("");
   const [equipmentNotes, setEquipmentNotes] = useState("");
@@ -61,6 +68,7 @@ export default function ClientDetail() {
         accessNotes: accessNotes.trim(),
         waterFeatures: waterFeatures.trim(),
         chemicalNotes: chemicalNotes.trim(),
+        gallons: gallons === "" ? null : Number(gallons),
       });
       setPools([...pools, newPool]);
       setPlansByPool({ ...plansByPool, [newPool.id]: [] });
@@ -71,6 +79,7 @@ export default function ClientDetail() {
       setAccessNotes("");
       setWaterFeatures("");
       setChemicalNotes("");
+      setGallons("");
     } catch (error) {
       console.log("Error adding pool:", (error as Error).message);
     }
@@ -96,6 +105,19 @@ export default function ClientDetail() {
   function toggleWeekday(day: Weekday) {
     if (weekdays.includes(day)) setWeekdays(weekdays.filter((d) => d !== day));
     else setWeekdays([...weekdays, day]);
+  }
+
+  function computeGallons(){
+    const g = calculateGallons(
+      shape,
+      Number(length) || 0,
+      Number(width) || 0,
+      Number(avgDepth) || 0
+    );
+    if (g > 0) {
+      setGallons(String(g));
+      setShowDimensions(false);
+    }
   }
 
   async function savePlan() {
@@ -168,6 +190,49 @@ export default function ClientDetail() {
       <TextInput style={styles.input} placeholder="Default chemical notes" placeholderTextColor="#7a8a9a" value={chemicalNotes} onChangeText={setChemicalNotes} />
       <TextInput style={styles.input} placeholder="Equipment notes" placeholderTextColor="#7a8a9a" value={equipmentNotes} onChangeText={setEquipmentNotes} />
 
+      {/* gallons — type directly */}
+      <TextInput
+        style={styles.input}
+        placeholder="Volume (gallons)"
+        placeholderTextColor="#7a8a9a"
+        value={gallons}
+        onChangeText={setGallons}
+        keyboardType="numeric"
+      />
+
+      {/* gallons — or calculate from dimensions */}
+      <Pressable onPress={() => setShowDimensions(!showDimensions)}>
+        <Text style={styles.dimToggle}>
+          {showDimensions ? "− Hide" : "+ Calculate gallons from dimensions"}
+        </Text>
+      </Pressable>
+
+      {showDimensions ? (
+        <View style={styles.dimBox}>
+          <View style={styles.shapeRow}>
+            {(["rectangle", "round", "oval"] as const).map((s) => (
+              <Pressable
+                key={s}
+                style={[styles.shapeChip, shape === s && styles.shapeChipActive]}
+                onPress={() => setShape(s)}
+              >
+                <Text style={[styles.shapeText, shape === s && styles.shapeTextActive]}>{s}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <TextInput style={styles.input} placeholder="Length (ft)" placeholderTextColor="#7a8a9a"
+            value={length} onChangeText={setLength} keyboardType="numeric" />
+          <TextInput style={styles.input} placeholder="Width (ft)" placeholderTextColor="#7a8a9a"
+            value={width} onChangeText={setWidth} keyboardType="numeric" />
+          <TextInput style={styles.input} placeholder="Average depth (ft)" placeholderTextColor="#7a8a9a"
+            value={avgDepth} onChangeText={setAvgDepth} keyboardType="numeric" />
+          <Text style={styles.dimHint}>Average depth = (shallow + deep) ÷ 2</Text>
+          <Pressable style={styles.computeButton} onPress={computeGallons}>
+            <Text style={styles.computeText}>Calculate</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       <Pressable style={styles.button} onPress={addPool}>
         <Text style={styles.buttonText}>Add</Text>
       </Pressable>
@@ -189,6 +254,7 @@ export default function ClientDetail() {
               {item.waterFeatures ? <Text style={styles.cardDetail}>💧 {item.waterFeatures}</Text> : null}
               {item.chemicalNotes ? <Text style={styles.cardDetail}>🧪 {item.chemicalNotes}</Text> : null}
               {item.equipmentNotes ? <Text style={styles.cardDetail}>🔧 {item.equipmentNotes}</Text> : null}
+              {item.gallons ? <Text style={styles.cardDetail}>💧 {item.gallons} gal</Text> : null}
 
               {poolPlans.map((plan) => (
                 <View key={plan.id} style={styles.planRow}>
@@ -268,6 +334,7 @@ export default function ClientDetail() {
       />
     </View>
   );
+  
 }
 
 const styles = StyleSheet.create({
@@ -316,4 +383,14 @@ const styles = StyleSheet.create({
   deleteButton: { alignSelf: "flex-start", marginTop: 14, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: "#d9534f" },
   deleteText: { color: "#d9534f", fontSize: 14, fontWeight: "600" },
   empty: { color: "#7a8a9a", fontSize: 16, textAlign: "center", marginTop: 40 },
+  dimToggle: { color: "#4aa3df", fontSize: 14, fontWeight: "600", marginBottom: 10 },
+dimBox: { backgroundColor: "#16243a", borderRadius: 10, padding: 12, marginBottom: 12 },
+shapeRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+shapeChip: { flex: 1, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: "#33485f", alignItems: "center" },
+shapeChipActive: { backgroundColor: "#4aa3df", borderColor: "#4aa3df" },
+shapeText: { color: "#cccccc", fontSize: 13, textTransform: "capitalize" },
+shapeTextActive: { color: "#0e1a2b", fontWeight: "600" },
+dimHint: { color: "#7a8a9a", fontSize: 12, marginBottom: 10 },
+computeButton: { backgroundColor: "#4aa3df", alignItems: "center", paddingVertical: 10, borderRadius: 8 },
+computeText: { color: "#0e1a2b", fontSize: 14, fontWeight: "600" },
 });
