@@ -5,8 +5,11 @@ import {
     createClient,
     deleteClientById,
     fetchClients,
+    fetchClientsNeedingCoords,
+    saveClientCoords,
     updateClient,
 } from "../../lib/clients";
+import { delay, geocodeAddress } from "../../lib/geocoding";
 import { Client } from "../../types/client";
 
 export default function Clients() {
@@ -17,6 +20,7 @@ export default function Clients() {
   const [phone, setPhone] = useState("");
   const [clients, setClients] = useState<Client[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -71,6 +75,26 @@ export default function Clients() {
     }
   }
 
+  async function locateClients() {
+    setLocating(true);
+    try {
+      const needing = await fetchClientsNeedingCoords();
+      for (const client of needing) {
+        const coords = await geocodeAddress(client.address);
+        if (coords) {
+          await saveClientCoords(client.id, coords);
+        }
+        await delay(1000); // be polite to the free service
+      }
+      const refreshed = await fetchClients();
+      setClients(refreshed);
+    } catch (error) {
+      console.log("Error locating clients:", (error as Error).message);
+    } finally {
+      setLocating(false);
+    }
+  }
+
   return (
     <View style={styles.container}>
       <TextInput style={styles.input} placeholder="Client name" placeholderTextColor="#7a8a9a"
@@ -93,6 +117,12 @@ export default function Clients() {
         )}
       </View>
 
+      <Pressable style={styles.locateButton} onPress={locateClients} disabled={locating}>
+        <Text style={styles.locateText}>
+          {locating ? "Locating..." : "📍 Locate clients on map"}
+        </Text>
+      </Pressable>
+
       <FlatList
         style={styles.list}
         data={clients}
@@ -102,6 +132,9 @@ export default function Clients() {
             <Text style={styles.cardName}>{item.name}</Text>
             <Text style={styles.cardDetail}>{item.phone || "No phone"}</Text>
             <Text style={styles.cardDetail}>{item.address || "No address"}</Text>
+            <Text style={styles.cardCoords}>
+              {item.latitude ? "📍 Located" : "Not located yet"}
+            </Text>
             <View style={styles.cardButtons}>
               <Pressable style={styles.editButton} onPress={() => startEdit(item)}>
                 <Text style={styles.editText}>Edit</Text>
@@ -121,15 +154,18 @@ export default function Clients() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0e1a2b", padding: 24 },
   input: { backgroundColor: "#1b2a3d", color: "#ffffff", fontSize: 16, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10, borderWidth: 1, borderColor: "#33485f", marginBottom: 10 },
-  formButtons: { flexDirection: "row", gap: 10, marginBottom: 20 },
+  formButtons: { flexDirection: "row", gap: 10, marginBottom: 16 },
   button: { flex: 1, backgroundColor: "#4aa3df", alignItems: "center", paddingVertical: 14, borderRadius: 10 },
   buttonText: { color: "#0e1a2b", fontSize: 16, fontWeight: "600" },
   cancelButton: { paddingVertical: 14, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: "#33485f", alignItems: "center" },
   cancelText: { color: "#cccccc", fontSize: 16 },
+  locateButton: { backgroundColor: "#1b2a3d", borderWidth: 1, borderColor: "#4aa3df", alignItems: "center", paddingVertical: 12, borderRadius: 10, marginBottom: 16 },
+  locateText: { color: "#4aa3df", fontSize: 15, fontWeight: "600" },
   list: { flex: 1 },
   card: { backgroundColor: "#1b2a3d", padding: 16, borderRadius: 10, marginBottom: 10 },
   cardName: { color: "#ffffff", fontSize: 18, fontWeight: "600", marginBottom: 4 },
   cardDetail: { color: "#7a8a9a", fontSize: 15, marginTop: 2 },
+  cardCoords: { color: "#8fd6a0", fontSize: 13, marginTop: 6 },
   cardButtons: { flexDirection: "row", gap: 10, marginTop: 12 },
   editButton: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: "#4aa3df" },
   editText: { color: "#4aa3df", fontSize: 14, fontWeight: "600" },

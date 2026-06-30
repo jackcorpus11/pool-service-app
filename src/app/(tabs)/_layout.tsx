@@ -27,6 +27,10 @@ export default function TabsLayout() {
         name="schedule"                                    // matches schedule.tsx
         options={{ title: "Schedule", tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📅</Text> }}
       />
+      <Tabs.Screen
+        name="map"
+        options={{ title: "Map", tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🗺️</Text> }}
+      />
     </Tabs>
   );
 }
