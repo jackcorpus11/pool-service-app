@@ -1,10 +1,11 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, Linking, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { checkRange, HOT_TUB_RANGES, POOL_RANGES } from "../../lib/chemicalRanges";
 import { fetchAllPoolsWithClient, PoolWithClient } from "../../lib/pools";
 import { completeVisit } from "../../lib/readings";
+import { buildRouteUrl, MAX_RELIABLE_STOPS } from "../../lib/routing";
 import {
   createOneOffVisit,
   deleteVisitById,
@@ -140,6 +141,23 @@ export default function Schedule() {
     return "Unknown";
   }
 
+  async function sendRoute() {
+    console.log("Coords check:", dayVisits.map((v) => ({
+      name: v.clientName,
+      lat: v.latitude,
+      lng: v.longitude
+    })));
+    const url = buildRouteUrl(dayVisits);
+    if (!url) {
+      console.log("No route URL generated");
+      return;
+    } try {
+      await Linking.openURL(url);
+    } catch (error) {
+      console.log("Error opening route URL:", (error as Error).message);
+    }
+  }
+
   return (
     <View style={styles.container}>
       <Calendar
@@ -152,6 +170,19 @@ export default function Schedule() {
         }}
         style={styles.calendar}
       />
+
+      {selectedDate && dayVisits.length > 0 ? (
+        <Pressable style={styles.routeButton} onPress={sendRoute}>
+          <Text style={styles.routeText}>
+            Send Route to Maps ({dayVisits.length} stop{dayVisits.length > 1 ? "s" : ""})
+          </Text>
+        </Pressable>
+      ) : null}
+        {selectedDate && dayVisits.length > MAX_RELIABLE_STOPS ? (
+          <Text style={styles.routeWarning}>
+            Note: maps apps may only handle ~{MAX_RELIABLE_STOPS} stops at once.
+          </Text>
+        ) : null}
 
       <View style={styles.headingRow}>
         <Text style={styles.heading}>{selectedDate ? `Jobs on ${selectedDate}` : "Tap a day"}</Text>
@@ -327,4 +358,7 @@ const styles = StyleSheet.create({
   removeText: { color: "#d9534f", fontSize: 13 },
   empty: { color: "#7a8a9a", fontSize: 15, textAlign: "center", marginTop: 20 },
   jobKind: { color: "#4aa3df", fontSize: 14, marginTop: 3, fontWeight: "600" },
+  routeButton: { backgroundColor: "#4aa3df", alignItems: "center", paddingVertical: 12, borderRadius: 10, marginBottom: 12 },
+  routeText: { color: "#0e1a2b", fontSize: 15, fontWeight: "600" },
+  routeWarning: { color: "#e0a458", fontSize: 13, textAlign: "center", marginBottom: 12 }
 });

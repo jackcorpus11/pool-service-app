@@ -6,6 +6,8 @@ export type VisitWithDetails = ServiceVisit & {
   clientName: string;
   clientAddress: string;
   poolKind: string;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 const WEEKDAY_NUMBERS: Record<string, number> = {
@@ -17,7 +19,7 @@ const WEEKDAY_NUMBERS: Record<string, number> = {
 export async function fetchVisitsWithDetails(): Promise<VisitWithDetails[]> {
   const { data, error } = await supabase
     .from("service_visits")
-    .select("*, pools(kind, clients(name, address))")
+    .select("*, pools(kind, clients(name, address, latitude, longitude))")
     .order("visit_date", { ascending: true });
 
   if (error) throw error;
@@ -32,6 +34,8 @@ export async function fetchVisitsWithDetails(): Promise<VisitWithDetails[]> {
     poolKind: row.pools?.kind ?? "pool",
     clientName: row.pools?.clients?.name ?? "Unknown client",
     clientAddress: row.pools?.clients?.address ?? "",
+    latitude: row.pools?.clients?.latitude ?? null,
+    longitude: row.pools?.clients?.longitude ?? null,
   }));
 }
 
