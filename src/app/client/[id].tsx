@@ -1,9 +1,9 @@
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Calendar } from "react-native-calendars";
 import { createPlan, deletePlanById, fetchPlansForPool } from "../../lib/plans";
-import { createPool, deletePoolById, fetchPoolsForClient } from "../../lib/pools";
+import { createPool, deletePoolById, fetchPoolsForClient, updatePool } from "../../lib/pools";
 import { calculateGallons } from "../../lib/poolVolume";
 import { generateVisitsForPlan } from "../../lib/visits";
 import { ServicePlan, Weekday } from "../../types/plan";
@@ -29,6 +29,7 @@ export default function ClientDetail() {
   const [accessNotes, setAccessNotes] = useState("");
   const [waterFeatures, setWaterFeatures] = useState("");
   const [chemicalNotes, setChemicalNotes] = useState("");
+  const [editingPoolId, setEditingPoolId] = useState<string | null>(null);
 
   const [pools, setPools] = useState<Pool[]>([]);
   const [plansByPool, setPlansByPool] = useState<Record<string, ServicePlan[]>>({});
@@ -56,33 +57,55 @@ export default function ClientDetail() {
     load();
   }, [id]);
 
-  async function addPool() {
-    if (poolType.trim() === "" && kind === "pool") return; // pools want a type; hot tubs can skip it
-    try {
-      const newPool = await createPool({
-        clientId: id,
-        kind,
-        poolType: poolType.trim(),
-        poolSize: poolSize.trim(),
-        equipmentNotes: equipmentNotes.trim(),
-        accessNotes: accessNotes.trim(),
-        waterFeatures: waterFeatures.trim(),
-        chemicalNotes: chemicalNotes.trim(),
-        gallons: gallons === "" ? null : Number(gallons),
-      });
+ async function addPool() {
+  if (poolType.trim() === "" && kind === "pool") return;
+  const details = {
+    clientId: id,
+    kind,
+    poolType: poolType.trim(),
+    poolSize: poolSize.trim(),
+    equipmentNotes: equipmentNotes.trim(),
+    accessNotes: accessNotes.trim(),
+    waterFeatures: waterFeatures.trim(),
+    chemicalNotes: chemicalNotes.trim(),
+    gallons: gallons.trim() === "" ? null : Number(gallons.replace(/,/g, "")),
+  };
+
+  console.log("Saving pool with gallons:", details.gallons);
+
+  try {
+    if (editingPoolId === null) {
+      const newPool = await createPool(details);
       setPools([...pools, newPool]);
       setPlansByPool({ ...plansByPool, [newPool.id]: [] });
-      setKind("pool");
-      setPoolType("");
-      setPoolSize("");
-      setEquipmentNotes("");
-      setAccessNotes("");
-      setWaterFeatures("");
-      setChemicalNotes("");
-      setGallons("");
-    } catch (error) {
-      console.log("Error adding pool:", (error as Error).message);
+    } else {
+      const updated = await updatePool(editingPoolId, details);
+      setPools(pools.map((p) => (p.id === editingPoolId ? updated : p)));
     }
+    // reset form
+    setKind("pool");
+    setPoolType("");
+    setPoolSize("");
+    setEquipmentNotes("");
+    setAccessNotes("");
+    setWaterFeatures("");
+    setChemicalNotes("");
+    setGallons("");
+    setEditingPoolId(null);
+  } catch (error) {
+    console.log("Error saving pool:", (error as Error).message);
+  }
+}
+  function startEditPool(pool: Pool) {
+    setKind(pool.kind);
+    setPoolType(pool.poolType);
+    setPoolSize(pool.poolSize);
+    setEquipmentNotes(pool.equipmentNotes);
+    setAccessNotes(pool.accessNotes);
+    setWaterFeatures(pool.waterFeatures);
+    setChemicalNotes(pool.chemicalNotes);
+    setGallons(pool.gallons === null ? "" : String(pool.gallons));
+    setEditingPoolId(pool.id);
   }
 
   async function removePool(poolId: string) {
@@ -184,7 +207,6 @@ export default function ClientDetail() {
       </View>
 
       <TextInput style={styles.input} placeholder={kind === "pool" ? "Pool type (concrete, vinyl)" : "Type (optional)"} placeholderTextColor="#7a8a9a" value={poolType} onChangeText={setPoolType} />
-      <TextInput style={styles.input} placeholder="Size (gallons)" placeholderTextColor="#7a8a9a" value={poolSize} onChangeText={setPoolSize} keyboardType="numeric" />
       <TextInput style={styles.input} placeholder="Gate code / access notes" placeholderTextColor="#7a8a9a" value={accessNotes} onChangeText={setAccessNotes} />
       <TextInput style={styles.input} placeholder="Water features (heater, salt system...)" placeholderTextColor="#7a8a9a" value={waterFeatures} onChangeText={setWaterFeatures} />
       <TextInput style={styles.input} placeholder="Default chemical notes" placeholderTextColor="#7a8a9a" value={chemicalNotes} onChangeText={setChemicalNotes} />
@@ -233,8 +255,8 @@ export default function ClientDetail() {
         </View>
       ) : null}
 
-      <Pressable style={styles.button} onPress={addPool}>
-        <Text style={styles.buttonText}>Add</Text>
+        <Pressable style={styles.button} onPress={addPool}>
+          <Text style={styles.buttonText}>{editingPoolId === null ? "Add" : "Update pool"}</Text>
       </Pressable>
 
       <FlatList
@@ -323,6 +345,13 @@ export default function ClientDetail() {
                   <Text style={styles.addPlanText}>+ Add service plan</Text>
                 </Pressable>
               )}
+              <Pressable onPress={() => router.push(`/calculator/${item.id}`)}>
+                <Text style={styles.addPlanText}>🧪 Dosage calculator</Text>
+              </Pressable>
+
+              <Pressable style={styles.button} onPress={() => startEditPool(item)}>
+                <Text style={styles.buttonText}>✎ Edit pool</Text>
+              </Pressable>
 
               <Pressable style={styles.deleteButton} onPress={() => removePool(item.id)}>
                 <Text style={styles.deleteText}>Delete</Text>

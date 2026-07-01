@@ -14,6 +14,8 @@ export default function RootLayout() {
 
       {/* client detail — lives OUTSIDE the tabs, pushed on top */}
       <Stack.Screen name="client/[id]" options={{ title: "Client Details" }} />
+      <Stack.Screen name="calculator/[poolId]" options={{ title: "Dosage Calculator" }} />
+      <Stack.Screen name="settings" options={{ title: "Settings" }} />
     </Stack>
   );
 }

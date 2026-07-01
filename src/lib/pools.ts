@@ -32,6 +32,16 @@ export async function fetchPoolsForClient(clientId: string): Promise<Pool[]> {
   if (error) throw error;
   return data.map(rowToPool);
 }
+export async function fetchPoolById(id: string): Promise<Pool | null> {
+  const { data, error } = await supabase
+    .from("pools")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? rowToPool(data) : null;
+}
 
 export async function createPool(details: Omit<Pool, "id" | "lastServiced">): Promise<Pool> {
   const { data, error } = await supabase
@@ -71,4 +81,26 @@ export async function fetchAllPoolsWithClient(): Promise<PoolWithClient[]> {
     id: row.id,
     label: `${row.clients?.name ?? "Unknown"} — ${row.kind === "pool" ? (row.pool_type || "pool") : row.kind}`,
   }));
+}
+
+export async function updatePool(id: string, details: Omit<Pool, "id" | "lastServiced">): Promise<Pool> {
+  const { data, error } = await supabase
+    .from("pools")
+    .update({
+      client_id: details.clientId,
+      kind: details.kind,
+      pool_type: details.poolType,
+      pool_size: details.poolSize,
+      equipment_notes: details.equipmentNotes,
+      access_notes: details.accessNotes,
+      water_features: details.waterFeatures,
+      chemical_notes: details.chemicalNotes,
+      gallons: details.gallons,
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return rowToPool(data);
 }

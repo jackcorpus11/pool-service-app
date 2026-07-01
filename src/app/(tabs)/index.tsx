@@ -18,6 +18,10 @@ export default function Home() {
         <Text style={styles.tileIcon}>📅</Text>
         <Text style={styles.tileText}>Schedule</Text>
       </Pressable>
+      <Pressable style={styles.tile} onPress={() => router.push("/settings")}>
+        <Text style={styles.tileIcon}>⚙️</Text>
+        <Text style={styles.tileText}>Settings</Text>
+      </Pressable>
     </View>
   );
 }
