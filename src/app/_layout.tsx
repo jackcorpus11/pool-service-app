@@ -16,6 +16,7 @@ export default function RootLayout() {
       <Stack.Screen name="client/[id]" options={{ title: "Client Details" }} />
       <Stack.Screen name="calculator/[poolId]" options={{ title: "Dosage Calculator" }} />
       <Stack.Screen name="settings" options={{ title: "Settings" }} />
+      <Stack.Screen name="invoice/[visitId]" options={{ title: "Invoice" }} />
     </Stack>
   );
 }
