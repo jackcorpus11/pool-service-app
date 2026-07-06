@@ -202,7 +202,7 @@ export default function ClientDetail() {
         {KINDS.map((k) => (
           <Pressable key={k} style={[styles.kindChip, kind === k && styles.kindChipActive]} onPress={() => setKind(k)}>
             <Text style={[styles.kindText, kind === k && styles.kindTextActive]}>{k}</Text>
-          </Pressable>
+          </Pressable> 
         ))}
       </View>
 

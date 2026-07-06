@@ -107,3 +107,72 @@ export async function deleteVisitById(id: string): Promise<void> {
   const { error } = await supabase.from("service_visits").delete().eq("id", id);
   if (error) throw error;
 }
+
+export async function skipVisit(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("service_visits")
+    .update({ status: "skipped" })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function rescheduleVisit(id: string, newDate: string): Promise<void> {
+  const { error } = await supabase
+    .from("service_visits")
+    .update({ visit_date: newDate, status: "scheduled" })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export type HistoryEntry = { 
+  id: string;
+  visitDate: string;
+  jobType: string;
+  clientName: string;
+  poolKind: string;
+  reading: {
+    ph: number | null;
+    freeChlorine: number | null;
+    totalAlkalinity: number | null;
+    cyanuricAcid: number | null;
+    calciumHardness: number | null;
+    salt: number | null;
+    waterTemp: number | null;
+    notes: string;
+  } | null;
+};
+
+export async function fetchAllHistory(): Promise<HistoryEntry[]> {
+  const { data, error } = await supabase
+    .from("service_visits")
+    .select("*, pool(kind, clients(name)), chemical_readings(*)")
+    .eq("status", "done")
+    .order("visit_date", { ascending: false });
+
+    if (error) throw error;
+
+  return data
+    .filter((row: any) => row.status === "done")
+    .map((row: any) => {
+      const r = row.chemical_readings?.[0];
+      return {
+        id: row.id,
+        visitDate: row.visit_date,
+        jobType: row.job_type,
+        clientName: row.pool?.clients?.name ?? "Unknown Client",
+        poolKind: row.pool?.kind ?? "pool",
+        reading: r
+          ? {
+            ph: r.ph,
+            freeChlorine: r.free_chlorine,
+            totalAlkalinity: r.total_alkalinity,
+            cyanuricAcid: r.cyanuric_acid,
+            calciumHardness: r.calcium_hardness,
+            salt: r.salt,
+            waterTemp: r.water_temp,
+            notes: r.notes?? "",
+          }
+          : null,
+      };
+    });
+}

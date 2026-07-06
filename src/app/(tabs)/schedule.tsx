@@ -10,6 +10,8 @@ import {
   createOneOffVisit,
   deleteVisitById,
   fetchVisitsWithDetails,
+  rescheduleVisit,
+  skipVisit,
   updateVisitJobType,
   VisitWithDetails,
 } from "../../lib/visits";
@@ -43,6 +45,7 @@ export default function Schedule() {
   const [addingJob, setAddingJob] = useState(false);
   const [chosenPoolId, setChosenPoolId] = useState("");
   const [chosenType, setChosenType] = useState("cleaning");
+  const [reschedulingId, setReschedulingId] = useState<string | null>(null);
 
   // mark-done form
   const [completingVisitId, setCompletingVisitId] = useState<string | null>(null);
@@ -81,6 +84,25 @@ export default function Schedule() {
       console.log("Error changing type:", (error as Error).message);
     }
   }
+  async function handleSkip(visitId: string) {
+  try {
+    await skipVisit(visitId);
+    setVisits(visits.map((v) => (v.id === visitId ? { ...v, status: "skipped" } : v)));
+  } catch (e) {
+    console.log("Error skipping:", (e as Error).message);
+  }
+}
+
+async function handleReschedule(visitId: string, newDate: string) {
+  console.log("Reschedule tapped:", visitId, "→", newDate);
+  try {
+    await rescheduleVisit(visitId, newDate);
+    setVisits(visits.map((v) => (v.id === visitId ? { ...v, visitDate: newDate, status: "scheduled" } : v)));
+    setReschedulingId(null);
+  } catch (e) {
+    console.log("Error rescheduling:", (e as Error).message);
+  }
+}
 
   async function removeVisit(visitId: string) {
     try {
@@ -243,7 +265,53 @@ export default function Schedule() {
                   <Text style={styles.jobType}>{item.jobType}  ✎</Text>
                 </Pressable>
               )}
+              {!isCompleting && reschedulingId !== item.id ? (
+                <View style={styles.jobFooter}>
+                  {item.status === "done" ? (
+                    <Text style={styles.jobStatus}>completed</Text>
+                  ) : item.status === "skipped" ? (
+                    <Text style={styles.skippedStatus}>skipped</Text>
+                  ) : (
+                    <Pressable style={styles.markDoneButton} onPress={() => openComplete(item.id)}>
+                      <Text style={styles.markDoneText}>Mark done</Text>
+                    </Pressable>
+                    )}
+                  <View style={styles.footerActions}>
+                    {item.status !== "done" ? (
+                    <>
+                  <Pressable onPress={() => setReschedulingId(item.id)}>
+                      <Text style={styles.rescheduleText}>Reschedule</Text>
+                      </Pressable>
+                      {item.status !== "skipped" ? (
+                      <Pressable onPress={() => handleSkip(item.id)}>
+                      <Text style={styles.skipText}>Skip</Text>
+                    </Pressable>
+                    ) : null}
+                      </>
+                    ) : null}
+                    <Pressable onPress={() => removeVisit(item.id)}>
+                      <Text style={styles.removeText}>Remove</Text>
+                    </Pressable>
+                    </View>
+                  </View>
+                  ) : null}
 
+                  {reschedulingId === item.id ? (
+                  <View style={styles.rescheduleBox}>
+                  <Text style={styles.rescheduleLabel}>Pick a new date:</Text>
+                  <Calendar
+                  onDayPress={(day) => handleReschedule(item.id, day.dateString)}
+                      theme={{
+                            calendarBackground: "#1b2a3d", dayTextColor: "#ffffff", monthTextColor: "#4aa3df",
+                            textDisabledColor: "#445", arrowColor: "#4aa3df", todayTextColor: "#8fd6a0",
+                        }}
+                    style={styles.calendar}
+                    />
+                  <Pressable onPress={() => setReschedulingId(null)}>
+                <Text style={styles.cancelText}>Cancel</Text>
+                 </Pressable>
+              </View>
+                ) : null}
               {/* mark-done readings form */}
               {isCompleting ? (
                 <View style={styles.readingForm}>
@@ -299,7 +367,11 @@ export default function Schedule() {
                   <Pressable onPress={() => removeVisit(item.id)}>
                     <Text style={styles.removeText}>Remove</Text>
                   </Pressable>
+                  <Pressable onPress={() => router.push(`/invoice/${item.id}`)}>
+                    <Text style={styles.addJobText}>💵 Invoice</Text>
+                  </Pressable>
                 </View>
+                
               )}
             </View>
           );
@@ -357,5 +429,11 @@ const styles = StyleSheet.create({
   jobKind: { color: "#4aa3df", fontSize: 14, marginTop: 3, fontWeight: "600" },
   routeButton: { backgroundColor: "#4aa3df", alignItems: "center", paddingVertical: 12, borderRadius: 10, marginBottom: 12 },
   routeText: { color: "#0e1a2b", fontSize: 15, fontWeight: "600" },
-  routeWarning: { color: "#e0a458", fontSize: 13, textAlign: "center", marginBottom: 12 }
+  routeWarning: { color: "#e0a458", fontSize: 13, textAlign: "center", marginBottom: 12 },
+  footerActions: { flexDirection: "row", gap: 14, alignItems: "center" },
+  rescheduleText: { color: "#4aa3df", fontSize: 13, fontWeight: "600" },
+  skipText: { color: "#e0a458", fontSize: 13, fontWeight: "600" },
+  skippedStatus: { color: "#e0a458", fontSize: 13, textTransform: "capitalize" },
+  rescheduleBox: { marginTop: 12, borderTopWidth: 1, borderTopColor: "#33485f", paddingTop: 12 },
+  rescheduleLabel: { color: "#cccccc", fontSize: 14, marginBottom: 8 },
 });

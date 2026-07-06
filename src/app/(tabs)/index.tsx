@@ -22,6 +22,10 @@ export default function Home() {
         <Text style={styles.tileIcon}>⚙️</Text>
         <Text style={styles.tileText}>Settings</Text>
       </Pressable>
+      <Pressable style={styles.tile} onPress={() => router.push("/history")}>
+        <Text style={styles.tileIcon}>📋</Text>
+        <Text style={styles.tileText}>Service History</Text>
+      </Pressable>
     </View>
   );
 }
