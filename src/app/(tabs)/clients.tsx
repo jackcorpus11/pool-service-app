@@ -2,12 +2,12 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import {
-    createClient,
-    deleteClientById,
-    fetchClients,
-    fetchClientsNeedingCoords,
-    saveClientCoords,
-    updateClient,
+  createClient,
+  deleteClientById,
+  fetchClients,
+  fetchClientsNeedingCoords,
+  saveClientCoords,
+  updateClient,
 } from "../../lib/clients";
 import { delay, geocodeAddress } from "../../lib/geocoding";
 import { Client } from "../../types/client";
@@ -18,6 +18,7 @@ export default function Clients() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [clients, setClients] = useState<Client[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
@@ -38,12 +39,18 @@ export default function Clients() {
     setName("");
     setAddress("");
     setPhone("");
+    setEmail("");
     setEditingId(null);
   }
 
   async function saveClient() {
     if (name.trim() === "") return;
-    const details = { name: name.trim(), address: address.trim(), phone: phone.trim() };
+    const details = {
+      name: name.trim(),
+      address: address.trim(),
+      phone: phone.trim(),
+      email: email.trim(),
+    };
     try {
       if (editingId === null) {
         const newClient = await createClient(details);
@@ -62,6 +69,7 @@ export default function Clients() {
     setName(client.name);
     setAddress(client.address);
     setPhone(client.phone);
+    setEmail(client.email);
     setEditingId(client.id);
   }
 
@@ -81,10 +89,8 @@ export default function Clients() {
       const needing = await fetchClientsNeedingCoords();
       for (const client of needing) {
         const coords = await geocodeAddress(client.address);
-        if (coords) {
-          await saveClientCoords(client.id, coords);
-        }
-        await delay(1000); // be polite to the free service
+        if (coords) await saveClientCoords(client.id, coords);
+        await delay(1000);
       }
       const refreshed = await fetchClients();
       setClients(refreshed);
@@ -103,12 +109,12 @@ export default function Clients() {
         value={address} onChangeText={setAddress} />
       <TextInput style={styles.input} placeholder="Phone number" placeholderTextColor="#7a8a9a"
         value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+      <TextInput style={styles.input} placeholder="Email" placeholderTextColor="#7a8a9a"
+        value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
 
       <View style={styles.formButtons}>
         <Pressable style={styles.button} onPress={saveClient}>
-          <Text style={styles.buttonText}>
-            {editingId === null ? "Add client" : "Update client"}
-          </Text>
+          <Text style={styles.buttonText}>{editingId === null ? "Add client" : "Update client"}</Text>
         </Pressable>
         {editingId !== null && (
           <Pressable style={styles.cancelButton} onPress={resetForm}>
@@ -118,9 +124,7 @@ export default function Clients() {
       </View>
 
       <Pressable style={styles.locateButton} onPress={locateClients} disabled={locating}>
-        <Text style={styles.locateText}>
-          {locating ? "Locating..." : "📍 Locate clients on map"}
-        </Text>
+        <Text style={styles.locateText}>{locating ? "Locating..." : "📍 Locate clients on map"}</Text>
       </Pressable>
 
       <FlatList
@@ -131,10 +135,9 @@ export default function Clients() {
           <Pressable style={styles.card} onPress={() => router.push(`/client/${item.id}`)}>
             <Text style={styles.cardName}>{item.name}</Text>
             <Text style={styles.cardDetail}>{item.phone || "No phone"}</Text>
+            <Text style={styles.cardDetail}>{item.email || "No email"}</Text>
             <Text style={styles.cardDetail}>{item.address || "No address"}</Text>
-            <Text style={styles.cardCoords}>
-              {item.latitude ? "📍 Located" : "Not located yet"}
-            </Text>
+            <Text style={styles.cardCoords}>{item.latitude ? "📍 Located" : "Not located yet"}</Text>
             <View style={styles.cardButtons}>
               <Pressable style={styles.editButton} onPress={() => startEdit(item)}>
                 <Text style={styles.editText}>Edit</Text>

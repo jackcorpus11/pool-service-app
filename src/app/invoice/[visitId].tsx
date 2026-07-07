@@ -1,15 +1,18 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import {
-    computeTotals,
-    createInvoice,
-    fetchInvoiceForVisit,
-    setInvoiceStatus,
-    updateInvoice,
+  computeTotals,
+  createInvoice,
+  fetchInvoiceForVisit,
+  formatInvoiceText,
+  setInvoiceStatus,
+  updateInvoice
 } from "../../lib/invoices";
 import { fetchSettings } from "../../lib/settings";
+import { fetchVisitContact } from "../../lib/visits";
 import { Part } from "../../types/invoice";
+
 
 export default function InvoiceScreen() {
   const { visitId } = useLocalSearchParams<{ visitId: string }>();
@@ -26,6 +29,11 @@ export default function InvoiceScreen() {
   const [pDesc, setPDesc] = useState("");
   const [pQty, setPQty] = useState("1");
   const [pCost, setPCost] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [clientName, setClientName] = useState("");
+  const [clientPhone, setClientPhone] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
+
 
   useEffect(() => {
     async function load() {
@@ -33,6 +41,11 @@ export default function InvoiceScreen() {
         const settings = await fetchSettings();
         setMarkup(settings.partsMarkupPercent);
         setLaborRate(String(settings.laborRate)); // auto-fill labor rate from settings
+        setBusinessName(settings.businessName);
+        const contact = await fetchVisitContact(visitId);
+        setClientName(contact.name);
+        setClientPhone(contact.phone);
+        setClientEmail(contact.email);
 
         const existing = await fetchInvoiceForVisit(visitId);
         if (existing) {
@@ -100,6 +113,33 @@ export default function InvoiceScreen() {
     } catch (e) {
       console.log("Error updating status:", (e as Error).message);
     }
+  }
+
+  function sendText() {
+    if (invoiceId === null) return;
+    const invoice = {
+      id: invoiceId, visitId, workDescription, parts,
+      laborHours: hours, laborRate: rate,
+      partsTotal, laborTotal, total, profit, status,
+    };
+
+    const body = formatInvoiceText(invoice, businessName, clientName);
+    const url = `sms:${clientPhone}?body=${encodeURIComponent(body)}`;
+    Linking.openURL(url).catch((e) => console.log("Error Opening messages:", e.message));
+  }
+
+  function sendEmail() {
+    if (invoiceId === null) return;
+    const invoice = {
+      id: invoiceId, visitId, workDescription, parts,
+      laborHours: hours, laborRate: rate, 
+      partsTotal, laborTotal, total, profit, status,
+    };
+    const body = formatInvoiceText(invoice, businessName, clientName);
+    const subject = `Invoice from ${businessName || "Pool Service"}`;
+    const url = `mailto:${clientEmail}?subject=${encodeURIComponent(subject)}&body=$body=${encodeURIComponent(body)}`;
+    Linking.openURL(url).catch((e) => console.log("Error opening email:", e.message));
+
   }
 
   return (
@@ -184,18 +224,25 @@ export default function InvoiceScreen() {
       </View>
 
       <Pressable style={styles.saveBtn} onPress={saveInvoice}>
-        <Text style={styles.saveText}>{invoiceId === null ? "Create invoice" : "Save changes"}</Text>
+        <Text style={styles.saveText}>{invoiceId === null ? "Create invoice" : "Save Changes"}</Text>
       </Pressable>
 
       {invoiceId !== null ? (
-        <Pressable
-          style={[styles.paidBtn, status === "paid" && styles.paidBtnActive]}
-          onPress={togglePaid}
-        >
+        <Pressable style={[styles.paidBtn, status === "paid" && styles.paidBtnActive]} onPress={togglePaid}>
           <Text style={[styles.paidText, status === "paid" && styles.paidTextActive]}>
-            {status === "paid" ? "✓ Paid" : "Mark as paid"}
+            {status === "paid" ? "✓ Paid" : "Mark as Paid"}
           </Text>
         </Pressable>
+      ) : null}
+      {invoiceId !== null ? (
+        <View style={styles.sendRow}>
+          <Pressable style={styles.sendBtn} onPress={sendText}>
+            <Text style={styles.sendText}> Text invoice</Text>
+          </Pressable>
+          <Pressable style={styles.sendBtn} onPress={sendEmail}>
+            <Text style={styles.sendText}> Email invoice</Text>
+          </Pressable>
+        </View>
       ) : null}
     </ScrollView>
   );
@@ -236,4 +283,7 @@ const styles = StyleSheet.create({
   paidBtnActive: { backgroundColor: "#8fd6a0" },
   paidText: { color: "#8fd6a0", fontSize: 16, fontWeight: "600" },
   paidTextActive: { color: "#0e1a2b" },
+  sendRow: { flexDirection: "row", gap: 10, marginTop: 10 },
+  sendBtn: { flex: 1, backgroundColor: "#1b2a3d", borderWidth: 1, borderColor: "#4aa3df", alignItems: "center", paddingVertical: 12, borderRadius: 10 },
+  sendText: { color: "4aa3df", fontSize: 14, fontWeight: "600" },
 });

@@ -93,3 +93,39 @@ export async function setInvoiceStatus(id: string, status: string): Promise<void
     const { error } = await supabase.from("invoices").update({ status }).eq("id", id);
     if (error) throw error;
 }
+
+export function formatInvoiceText(
+  invoice: Invoice,
+  businessName: string,
+  clientName: string
+): string {
+  const lines: string[] = [];
+  lines.push(businessName || "Pool Service");
+  lines.push("");
+  lines.push(`Invoice for ${clientName}`);
+  lines.push("");
+
+  if (invoice.workDescription) {
+    lines.push(`Work performed: ${invoice.workDescription}`);
+    lines.push("");
+  }
+
+  if (invoice.parts.length > 0) {
+    lines.push("Parts:");
+    for (const p of invoice.parts) {
+      lines.push(`  ${p.description} — ${p.qty} × $${p.chargeEach.toFixed(2)} = $${(p.qty * p.chargeEach).toFixed(2)}`);
+    }
+    lines.push(`  Parts total: $${invoice.partsTotal.toFixed(2)}`);
+    lines.push("");
+  }
+
+  if (invoice.laborTotal > 0) {
+    lines.push(`Labor: ${invoice.laborHours} hrs × $${invoice.laborRate.toFixed(2)} = $${invoice.laborTotal.toFixed(2)}`);
+    lines.push("");
+  }
+
+  lines.push(`TOTAL DUE: $${invoice.total.toFixed(2)}`);
+  lines.push(`Status: ${invoice.status}`);
+
+  return lines.join("\n");
+}

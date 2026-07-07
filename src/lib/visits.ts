@@ -176,3 +176,20 @@ export async function fetchAllHistory(): Promise<HistoryEntry[]> {
       };
     });
 }
+
+export type VisitContact = { name: string; phone: string; email: string };
+
+export async function fetchVisitContact(visitId: string): Promise<VisitContact> {
+  const { data, error } = await supabase
+    .from("service_visits")
+    .select("pools(clients(name, phone, email))")
+    .eq("id", visitId)
+    .single();
+  if (error) throw error;
+  const c = ( data as any).pools?.clients;
+  return {
+    name: c?.name ?? "Customer",
+    phone: c?.phone ?? "",
+    email: c?.email ?? "",
+  };
+}
