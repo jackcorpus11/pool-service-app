@@ -39,6 +39,7 @@ export default function ClientDetail() {
   const [intervalDays, setIntervalDays] = useState(7);
   const [weekdays, setWeekdays] = useState<Weekday[]>([]);
   const [startDate, setStartDate] = useState("");
+  const [showAddPool, setShowAddPool] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -105,6 +106,8 @@ export default function ClientDetail() {
     setWaterFeatures(pool.waterFeatures);
     setChemicalNotes(pool.chemicalNotes);
     setGallons(pool.gallons === null ? "" : String(pool.gallons));
+    setEditingPoolId(pool.id);
+    setShowAddPool(true);
     setEditingPoolId(pool.id);
   }
 
@@ -195,7 +198,33 @@ export default function ClientDetail() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Add a pool / hot tub</Text>
+      {/* toggle button — always visible */}
+      <Pressable style={styles.toggleButton} onPress={() => setShowAddPool(!showAddPool)}>
+        <Text style={styles.toggleButtonText}>
+          {showAddPool ? "✕ Close" : "+ Add a pool / hot tub"}
+        </Text>
+      </Pressable>
+
+      {/* the entire add-pool form — only shows when toggled on */}
+      {showAddPool ? (
+        <View>
+          {/* kind selector */}
+          <View style={styles.kindRow}>
+            {KINDS.map((k) => (
+              <Pressable key={k} style={[styles.kindChip, kind === k && styles.kindChipActive]} onPress={() => setKind(k)}>
+                <Text style={[styles.kindText, kind === k && styles.kindTextActive]}>{k}</Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <TextInput style={styles.input} placeholder={kind === "pool" ? "Pool type (concrete, vinyl)" : "Type (optional)"} placeholderTextColor="#7a8a9a" value={poolType} onChangeText={setPoolType} />
+          {/* ... ALL the other form inputs: access notes, water features, chemical notes, equipment notes, gallons, dimensions box ... */}
+
+          <Pressable style={styles.button} onPress={addPool}>
+            <Text style={styles.buttonText}>{editingPoolId === null ? "Add" : "Update pool"}</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {/* kind selector */}
       <View style={styles.kindRow}>
@@ -422,4 +451,6 @@ shapeTextActive: { color: "#0e1a2b", fontWeight: "600" },
 dimHint: { color: "#7a8a9a", fontSize: 12, marginBottom: 10 },
 computeButton: { backgroundColor: "#4aa3df", alignItems: "center", paddingVertical: 10, borderRadius: 8 },
 computeText: { color: "#0e1a2b", fontSize: 14, fontWeight: "600" },
+toggleButton: { backgroundColor: "#4aa3df", alignItems: "center", paddingVertical: 14, borderRadius: 10, marginBottom: 16 },
+toggleButtonText: { color: "#0e1a2b", fontSize: 16, fontWeight: "600" },
 });
