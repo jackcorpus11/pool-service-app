@@ -40,7 +40,7 @@ export default function MapWeb() {
       : [34.9496, -81.9321]; // Charlotte default
 
   return (
-    <div style={{ height: "100%", width: "100%" }}>
+    <div style={{ height: "100vh", width: "100%" }}>
       <MapContainer center={center} zoom={11} style={{ height: "100%", width: "100%" }}>
         <TileLayer
           attribution='&copy; OpenStreetMap contributors'
