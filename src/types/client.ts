@@ -3,6 +3,7 @@ export type Client = {
     name: string;
     address: string;
     phone: string;
+    email: string;
     latitude: number | null;
     longitude: number | null;
 };

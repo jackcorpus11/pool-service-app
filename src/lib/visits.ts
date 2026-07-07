@@ -145,7 +145,7 @@ export type HistoryEntry = {
 export async function fetchAllHistory(): Promise<HistoryEntry[]> {
   const { data, error } = await supabase
     .from("service_visits")
-    .select("*, pool(kind, clients(name)), chemical_readings(*)")
+    .select("*, pools(kind, clients(name)), chemical_readings(*)")
     .eq("status", "done")
     .order("visit_date", { ascending: false });
 
