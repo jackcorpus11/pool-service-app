@@ -218,75 +218,59 @@ export default function ClientDetail() {
           </View>
 
           <TextInput style={styles.input} placeholder={kind === "pool" ? "Pool type (concrete, vinyl)" : "Type (optional)"} placeholderTextColor="#7a8a9a" value={poolType} onChangeText={setPoolType} />
-          {/* ... ALL the other form inputs: access notes, water features, chemical notes, equipment notes, gallons, dimensions box ... */}
+          <TextInput style={styles.input} placeholder="Gate code / access notes" placeholderTextColor="#7a8a9a" value={accessNotes} onChangeText={setAccessNotes} />
+          <TextInput style={styles.input} placeholder="Water features (heater, salt system...)" placeholderTextColor="#7a8a9a" value={waterFeatures} onChangeText={setWaterFeatures} />
+          <TextInput style={styles.input} placeholder="Default chemical notes" placeholderTextColor="#7a8a9a" value={chemicalNotes} onChangeText={setChemicalNotes} />
+          <TextInput style={styles.input} placeholder="Equipment notes" placeholderTextColor="#7a8a9a" value={equipmentNotes} onChangeText={setEquipmentNotes} />
+
+          {/* gallons — type directly */}
+          <TextInput
+            style={styles.input}
+            placeholder="Volume (gallons)"
+            placeholderTextColor="#7a8a9a"
+            value={gallons}
+            onChangeText={setGallons}
+            keyboardType="numeric"
+          />
+
+          {/* gallons — or calculate from dimensions */}
+          <Pressable onPress={() => setShowDimensions(!showDimensions)}>
+            <Text style={styles.dimToggle}>
+              {showDimensions ? "− Hide" : "+ Calculate gallons from dimensions"}
+            </Text>
+          </Pressable>
+
+          {showDimensions ? (
+            <View style={styles.dimBox}>
+              <View style={styles.shapeRow}>
+                {(["rectangle", "round", "oval"] as const).map((s) => (
+                  <Pressable
+                    key={s}
+                    style={[styles.shapeChip, shape === s && styles.shapeChipActive]}
+                    onPress={() => setShape(s)}
+                  >
+                    <Text style={[styles.shapeText, shape === s && styles.shapeTextActive]}>{s}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <TextInput style={styles.input} placeholder="Length (ft)" placeholderTextColor="#7a8a9a"
+                value={length} onChangeText={setLength} keyboardType="numeric" />
+              <TextInput style={styles.input} placeholder="Width (ft)" placeholderTextColor="#7a8a9a"
+                value={width} onChangeText={setWidth} keyboardType="numeric" />
+              <TextInput style={styles.input} placeholder="Average depth (ft)" placeholderTextColor="#7a8a9a"
+                value={avgDepth} onChangeText={setAvgDepth} keyboardType="numeric" />
+              <Text style={styles.dimHint}>Average depth = (shallow + deep) ÷ 2</Text>
+              <Pressable style={styles.computeButton} onPress={computeGallons}>
+                <Text style={styles.computeText}>Calculate</Text>
+              </Pressable>
+            </View>
+          ) : null}
 
           <Pressable style={styles.button} onPress={addPool}>
             <Text style={styles.buttonText}>{editingPoolId === null ? "Add" : "Update pool"}</Text>
           </Pressable>
         </View>
       ) : null}
-
-      {/* kind selector */}
-      <View style={styles.kindRow}>
-        {KINDS.map((k) => (
-          <Pressable key={k} style={[styles.kindChip, kind === k && styles.kindChipActive]} onPress={() => setKind(k)}>
-            <Text style={[styles.kindText, kind === k && styles.kindTextActive]}>{k}</Text>
-          </Pressable> 
-        ))}
-      </View>
-
-      <TextInput style={styles.input} placeholder={kind === "pool" ? "Pool type (concrete, vinyl)" : "Type (optional)"} placeholderTextColor="#7a8a9a" value={poolType} onChangeText={setPoolType} />
-      <TextInput style={styles.input} placeholder="Gate code / access notes" placeholderTextColor="#7a8a9a" value={accessNotes} onChangeText={setAccessNotes} />
-      <TextInput style={styles.input} placeholder="Water features (heater, salt system...)" placeholderTextColor="#7a8a9a" value={waterFeatures} onChangeText={setWaterFeatures} />
-      <TextInput style={styles.input} placeholder="Default chemical notes" placeholderTextColor="#7a8a9a" value={chemicalNotes} onChangeText={setChemicalNotes} />
-      <TextInput style={styles.input} placeholder="Equipment notes" placeholderTextColor="#7a8a9a" value={equipmentNotes} onChangeText={setEquipmentNotes} />
-
-      {/* gallons — type directly */}
-      <TextInput
-        style={styles.input}
-        placeholder="Volume (gallons)"
-        placeholderTextColor="#7a8a9a"
-        value={gallons}
-        onChangeText={setGallons}
-        keyboardType="numeric"
-      />
-
-      {/* gallons — or calculate from dimensions */}
-      <Pressable onPress={() => setShowDimensions(!showDimensions)}>
-        <Text style={styles.dimToggle}>
-          {showDimensions ? "− Hide" : "+ Calculate gallons from dimensions"}
-        </Text>
-      </Pressable>
-
-      {showDimensions ? (
-        <View style={styles.dimBox}>
-          <View style={styles.shapeRow}>
-            {(["rectangle", "round", "oval"] as const).map((s) => (
-              <Pressable
-                key={s}
-                style={[styles.shapeChip, shape === s && styles.shapeChipActive]}
-                onPress={() => setShape(s)}
-              >
-                <Text style={[styles.shapeText, shape === s && styles.shapeTextActive]}>{s}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <TextInput style={styles.input} placeholder="Length (ft)" placeholderTextColor="#7a8a9a"
-            value={length} onChangeText={setLength} keyboardType="numeric" />
-          <TextInput style={styles.input} placeholder="Width (ft)" placeholderTextColor="#7a8a9a"
-            value={width} onChangeText={setWidth} keyboardType="numeric" />
-          <TextInput style={styles.input} placeholder="Average depth (ft)" placeholderTextColor="#7a8a9a"
-            value={avgDepth} onChangeText={setAvgDepth} keyboardType="numeric" />
-          <Text style={styles.dimHint}>Average depth = (shallow + deep) ÷ 2</Text>
-          <Pressable style={styles.computeButton} onPress={computeGallons}>
-            <Text style={styles.computeText}>Calculate</Text>
-          </Pressable>
-        </View>
-      ) : null}
-
-        <Pressable style={styles.button} onPress={addPool}>
-          <Text style={styles.buttonText}>{editingPoolId === null ? "Add" : "Update pool"}</Text>
-      </Pressable>
 
       <FlatList
         style={styles.list}
