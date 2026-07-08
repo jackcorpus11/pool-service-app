@@ -55,6 +55,7 @@ function RootNavigator() {
       <Stack.Screen name="invoice/[visitId]" options={{ title: "Invoice", headerLeft: backButton }} />
       <Stack.Screen name="history" options={{ title: "Service History", headerLeft: backButton }} />
       <Stack.Screen name="settings" options={{ title: "Settings", headerLeft: backButton }} />
+      <Stack.Screen name="quote/new" options={{ title: "New Quote", headerLeft: backButton }} />
     </Stack>
   );
 }
