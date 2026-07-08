@@ -208,6 +208,14 @@ export default function Schedule() {
         style={styles.calendar}
       />
 
+         {selectedDate && dayVisits.length > 0 ? (
+        <Pressable style={styles.routeButton} onPress={() => setShowMapChoice(!showMapChoice)}>
+          <Text style={styles.routeText}>
+            {showMapChoice ? "✕ Close" : `🧭 Send Route to Maps (${dayVisits.length} stop${dayVisits.length > 1 ? "s" : ""})`}
+          </Text>
+        </Pressable>
+      ) : null}
+
       {showMapChoice ? (
       <View style={styles.mapChoiceBox}>
         <Pressable style={styles.mapChoiceButton} onPress={sendRouteGoogle}>
