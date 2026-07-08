@@ -1,11 +1,11 @@
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 
 export default function Home() {
   const router = useRouter();
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Pool Service</Text>
       <Text style={styles.subtitle}>Manage your clients and schedule</Text>
 
@@ -26,7 +26,7 @@ export default function Home() {
         <Text style={styles.tileIcon}>📋</Text>
         <Text style={styles.tileText}>Service History</Text>
       </Pressable>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -37,4 +37,5 @@ const styles = StyleSheet.create({
   tile: { backgroundColor: "#1b2a3d", borderRadius: 14, padding: 24, marginBottom: 16, alignItems: "center", borderWidth: 1, borderColor: "#33485f" },
   tileIcon: { fontSize: 40, marginBottom: 8 },
   tileText: { color: "#ffffff", fontSize: 18, fontWeight: "600" },
+  content: { padding: 24 },
 });
