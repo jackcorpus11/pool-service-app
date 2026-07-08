@@ -5,7 +5,7 @@ import { Calendar } from "react-native-calendars";
 import { checkRange, HOT_TUB_RANGES, POOL_RANGES } from "../../lib/chemicalRanges";
 import { fetchAllPoolsWithClient, PoolWithClient } from "../../lib/pools";
 import { completeVisit } from "../../lib/readings";
-import { buildRouteUrl, MAX_RELIABLE_STOPS, orderStopsByNearest } from "../../lib/routing";
+import { buildAppleRouteUrl, buildRouteUrl, orderStopsByNearest } from "../../lib/routing";
 import {
   createOneOffVisit,
   deleteVisitById,
@@ -50,6 +50,7 @@ export default function Schedule() {
   // mark-done form
   const [completingVisitId, setCompletingVisitId] = useState<string | null>(null);
   const [reading, setReading] = useState<ReadingInput>(emptyReading);
+  const [showMapChoice, setShowMapChoice] = useState(false);
 
   async function load() {
     try {
@@ -164,7 +165,7 @@ export default function Schedule() {
     return "Unknown";
   }
 
-  async function sendRoute() {
+  async function sendRouteGoogle() {
     const orderedStops = orderStopsByNearest(dayVisits);
     const url = buildRouteUrl(orderedStops);
     if (!url) {
@@ -173,10 +174,26 @@ export default function Schedule() {
     }
     try {
       await Linking.openURL(url);
+      setShowMapChoice(false);
     } catch (error) {
       console.log("Error opening route URL:", (error as Error).message);
     }
   }
+
+  async function sendRouteApple() {
+    const orderedStops = orderStopsByNearest(dayVisits);
+    const url = buildAppleRouteUrl(orderedStops);
+    if (!url) {
+      console.log("No located stops to route");
+      return;
+    }
+    try {
+      await Linking.openURL(url);
+      setShowMapChoice(false);
+  } catch (error) {
+      console.log("Error opening route URL:", (error as Error).message);
+    }
+}
 
   return (
     <View style={styles.container}>
@@ -191,18 +208,16 @@ export default function Schedule() {
         style={styles.calendar}
       />
 
-      {selectedDate && dayVisits.length > 0 ? (
-        <Pressable style={styles.routeButton} onPress={sendRoute}>
-          <Text style={styles.routeText}>
-            Send Route to Maps ({dayVisits.length} stop{dayVisits.length > 1 ? "s" : ""})
-          </Text>
+      {showMapChoice ? (
+      <View style={styles.mapChoiceBox}>
+        <Pressable style={styles.mapChoiceButton} onPress={sendRouteGoogle}>
+          <Text style={styles.mapChoiceText}>Google Maps</Text>
         </Pressable>
-      ) : null}
-      {selectedDate && dayVisits.length > MAX_RELIABLE_STOPS ? (
-        <Text style={styles.routeWarning}>
-          Note: maps apps may only handle ~{MAX_RELIABLE_STOPS} stops at once.
-        </Text>
-      ) : null}
+        <Pressable style={styles.mapChoiceButton} onPress={sendRouteApple}>
+          <Text style={styles.mapChoiceText}>Apple Maps</Text>
+        </Pressable>
+      </View>
+    ) : null}
 
       <View style={styles.headingRow}>
         <Text style={styles.heading}>{selectedDate ? `Jobs on ${selectedDate}` : "Tap a day"}</Text>
@@ -427,4 +442,8 @@ const styles = StyleSheet.create({
   skippedStatus: { color: "#e0a458", fontSize: 13, textTransform: "capitalize" },
   rescheduleBox: { marginTop: 12, borderTopWidth: 1, borderTopColor: "#33485f", paddingTop: 12 },
   rescheduleLabel: { color: "#cccccc", fontSize: 14, marginBottom: 8 },
+  mapChoiceBox: { backgroundColor: "#16243a", borderRadius: 10, padding: 12, marginBottom: 12 },
+  mapChoiceButton: { backgroundColor: "#1b2a3d", borderWidth: 1, borderColor: "#4aa3df", alignItems: "center", paddingVertical: 12, borderRadius: 8, marginBottom: 8 },
+  mapChoiceText: { color: "#4aa3df", fontSize: 15, fontWeight: "600" },
+  mapChoiceHint: { color: "#7a8a9a", fontSize: 12, marginTop: 4, textAlign: "center" },
 });
