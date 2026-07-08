@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput } from "react-native";
 import { fetchSettings, updateSettings } from "../lib/settings";
+import { supabase } from "../lib/supabase";
+
 
 export default function SettingsScreen() {
   const [businessName, setBusinessName] = useState("");
@@ -19,6 +21,10 @@ export default function SettingsScreen() {
       })
       .catch((e) => console.log("Error loading settings:", e.message));
   }, []);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+  }
 
   async function save() {
     try {
@@ -61,6 +67,9 @@ export default function SettingsScreen() {
       <Pressable style={styles.button} onPress={save}>
         <Text style={styles.buttonText}>{saved ? "✓ Saved" : "Save settings"}</Text>
       </Pressable>
+      <Pressable style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Log out</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -74,4 +83,6 @@ const styles = StyleSheet.create({
   hint: { color: "#7a8a9a", fontSize: 12, marginTop: 4 },
   button: { backgroundColor: "#4aa3df", alignItems: "center", paddingVertical: 14, borderRadius: 10, marginTop: 28 },
   buttonText: { color: "#0e1a2b", fontSize: 16, fontWeight: "600" },
+  logoutButton: { alignItems: "center", paddingVertical: 14, borderRadius: 10, marginTop: 16, borderWidth: 1, borderColor: "#d9534f" },
+  logoutText: { color: "#d9534f", fontSize: 16, fontWeight: "600" },
 });
