@@ -84,25 +84,25 @@ export default function Schedule() {
       console.log("Error changing type:", (error as Error).message);
     }
   }
-  async function handleSkip(visitId: string) {
-  try {
-    await skipVisit(visitId);
-    setVisits(visits.map((v) => (v.id === visitId ? { ...v, status: "skipped" } : v)));
-  } catch (e) {
-    console.log("Error skipping:", (e as Error).message);
-  }
-}
 
-async function handleReschedule(visitId: string, newDate: string) {
-  console.log("Reschedule tapped:", visitId, "→", newDate);
-  try {
-    await rescheduleVisit(visitId, newDate);
-    setVisits(visits.map((v) => (v.id === visitId ? { ...v, visitDate: newDate, status: "scheduled" } : v)));
-    setReschedulingId(null);
-  } catch (e) {
-    console.log("Error rescheduling:", (e as Error).message);
+  async function handleSkip(visitId: string) {
+    try {
+      await skipVisit(visitId);
+      setVisits(visits.map((v) => (v.id === visitId ? { ...v, status: "skipped" } : v)));
+    } catch (e) {
+      console.log("Error skipping:", (e as Error).message);
+    }
   }
-}
+
+  async function handleReschedule(visitId: string, newDate: string) {
+    try {
+      await rescheduleVisit(visitId, newDate);
+      setVisits(visits.map((v) => (v.id === visitId ? { ...v, visitDate: newDate, status: "scheduled" } : v)));
+      setReschedulingId(null);
+    } catch (e) {
+      console.log("Error rescheduling:", (e as Error).message);
+    }
+  }
 
   async function removeVisit(visitId: string) {
     try {
@@ -165,16 +165,17 @@ async function handleReschedule(visitId: string, newDate: string) {
   }
 
   async function sendRoute() {
-   const orderedStops = orderStopsByNearest(dayVisits);
-   const url = buildRouteUrl(orderedStops);
-   if (!url) {
-    console.log("No located stops to route");
-    return;
-   } try {
-    await Linking.openURL(url);
-   } catch (error) {
-    console.log("Error opening route URL:", (error as Error).message);
-   }
+    const orderedStops = orderStopsByNearest(dayVisits);
+    const url = buildRouteUrl(orderedStops);
+    if (!url) {
+      console.log("No located stops to route");
+      return;
+    }
+    try {
+      await Linking.openURL(url);
+    } catch (error) {
+      console.log("Error opening route URL:", (error as Error).message);
+    }
   }
 
   return (
@@ -197,11 +198,11 @@ async function handleReschedule(visitId: string, newDate: string) {
           </Text>
         </Pressable>
       ) : null}
-        {selectedDate && dayVisits.length > MAX_RELIABLE_STOPS ? (
-          <Text style={styles.routeWarning}>
-            Note: maps apps may only handle ~{MAX_RELIABLE_STOPS} stops at once.
-          </Text>
-        ) : null}
+      {selectedDate && dayVisits.length > MAX_RELIABLE_STOPS ? (
+        <Text style={styles.routeWarning}>
+          Note: maps apps may only handle ~{MAX_RELIABLE_STOPS} stops at once.
+        </Text>
+      ) : null}
 
       <View style={styles.headingRow}>
         <Text style={styles.heading}>{selectedDate ? `Jobs on ${selectedDate}` : "Tap a day"}</Text>
@@ -265,6 +266,8 @@ async function handleReschedule(visitId: string, newDate: string) {
                   <Text style={styles.jobType}>{item.jobType}  ✎</Text>
                 </Pressable>
               )}
+
+              {/* main footer — Mark done / status, plus Reschedule / Skip / Remove / Invoice */}
               {!isCompleting && reschedulingId !== item.id ? (
                 <View style={styles.jobFooter}>
                   {item.status === "done" ? (
@@ -275,51 +278,56 @@ async function handleReschedule(visitId: string, newDate: string) {
                     <Pressable style={styles.markDoneButton} onPress={() => openComplete(item.id)}>
                       <Text style={styles.markDoneText}>Mark done</Text>
                     </Pressable>
-                    )}
+                  )}
                   <View style={styles.footerActions}>
                     {item.status !== "done" ? (
-                    <>
-                  <Pressable onPress={() => setReschedulingId(item.id)}>
-                      <Text style={styles.rescheduleText}>Reschedule</Text>
-                      </Pressable>
-                      {item.status !== "skipped" ? (
-                      <Pressable onPress={() => handleSkip(item.id)}>
-                      <Text style={styles.skipText}>Skip</Text>
-                    </Pressable>
-                    ) : null}
+                      <>
+                        <Pressable onPress={() => setReschedulingId(item.id)}>
+                          <Text style={styles.rescheduleText}>Reschedule</Text>
+                        </Pressable>
+                        {item.status !== "skipped" ? (
+                          <Pressable onPress={() => handleSkip(item.id)}>
+                            <Text style={styles.skipText}>Skip</Text>
+                          </Pressable>
+                        ) : null}
                       </>
                     ) : null}
                     <Pressable onPress={() => removeVisit(item.id)}>
                       <Text style={styles.removeText}>Remove</Text>
                     </Pressable>
-                    </View>
+                    <Pressable onPress={() => router.push(`/invoice/${item.id}`)}>
+                      <Text style={styles.addJobText}>💵 Invoice</Text>
+                    </Pressable>
                   </View>
-                  ) : null}
+                </View>
+              ) : null}
 
-                  {reschedulingId === item.id ? (
-                  <View style={styles.rescheduleBox}>
+              {/* reschedule calendar */}
+              {reschedulingId === item.id ? (
+                <View style={styles.rescheduleBox}>
                   <Text style={styles.rescheduleLabel}>Pick a new date:</Text>
                   <Calendar
-                  onDayPress={(day) => handleReschedule(item.id, day.dateString)}
-                      theme={{
-                            calendarBackground: "#1b2a3d", dayTextColor: "#ffffff", monthTextColor: "#4aa3df",
-                            textDisabledColor: "#445", arrowColor: "#4aa3df", todayTextColor: "#8fd6a0",
-                        }}
+                    onDayPress={(day) => handleReschedule(item.id, day.dateString)}
+                    theme={{
+                      calendarBackground: "#1b2a3d", dayTextColor: "#ffffff", monthTextColor: "#4aa3df",
+                      textDisabledColor: "#445", arrowColor: "#4aa3df", todayTextColor: "#8fd6a0",
+                    }}
                     style={styles.calendar}
-                    />
+                  />
                   <Pressable onPress={() => setReschedulingId(null)}>
-                <Text style={styles.cancelText}>Cancel</Text>
-                 </Pressable>
-              </View>
-                ) : null}
+                    <Text style={styles.cancelText}>Cancel</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+
               {/* mark-done readings form */}
               {isCompleting ? (
                 <View style={styles.readingForm}>
                   <Text style={styles.formLabel}>Chemical readings</Text>
                   {READING_FIELDS.map((field) => {
                     const value = reading[field.key] as number | null;
-                    const status = checkRange(field.key as string, value, item.poolKind === " hot tub"|| item.poolKind === "spa");
-                    const isHotTub = item.poolKind == "hot tub" || item.poolKind == "spa";
+                    const isHotTub = item.poolKind === "hot tub" || item.poolKind === "spa";
+                    const status = checkRange(field.key as string, value, isHotTub);
                     const r = isHotTub ? HOT_TUB_RANGES[field.key as string] : POOL_RANGES[field.key as string];
                     return (
                       <View key={field.key} style={styles.readingRow}>
@@ -355,24 +363,7 @@ async function handleReschedule(visitId: string, newDate: string) {
                     </Pressable>
                   </View>
                 </View>
-              ) : (
-                <View style={styles.jobFooter}>
-                  {!isDone ? (
-                    <Pressable style={styles.markDoneButton} onPress={() => openComplete(item.id)}>
-                      <Text style={styles.markDoneText}>Mark done</Text>
-                    </Pressable>
-                  ) : (
-                    <Text style={styles.jobStatus}>completed</Text>
-                  )}
-                  <Pressable onPress={() => removeVisit(item.id)}>
-                    <Text style={styles.removeText}>Remove</Text>
-                  </Pressable>
-                  <Pressable onPress={() => router.push(`/invoice/${item.id}`)}>
-                    <Text style={styles.addJobText}>💵 Invoice</Text>
-                  </Pressable>
-                </View>
-                
-              )}
+              ) : null}
             </View>
           );
         }}
