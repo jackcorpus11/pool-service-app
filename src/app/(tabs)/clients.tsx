@@ -22,6 +22,7 @@ export default function Clients() {
   const [clients, setClients] = useState<Client[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
+  const [showAddClient, setShowAddClient] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -41,6 +42,7 @@ export default function Clients() {
     setPhone("");
     setEmail("");
     setEditingId(null);
+    setShowAddClient(false);
   }
 
   async function saveClient() {
@@ -71,6 +73,7 @@ export default function Clients() {
     setPhone(client.phone);
     setEmail(client.email);
     setEditingId(client.id);
+    setShowAddClient(true);
   }
 
   async function deleteClient(id: string) {
@@ -103,25 +106,37 @@ export default function Clients() {
 
   return (
     <View style={styles.container}>
-      <TextInput style={styles.input} placeholder="Client name" placeholderTextColor="#7a8a9a"
-        value={name} onChangeText={setName} />
-      <TextInput style={styles.input} placeholder="Address" placeholderTextColor="#7a8a9a"
-        value={address} onChangeText={setAddress} />
-      <TextInput style={styles.input} placeholder="Phone number" placeholderTextColor="#7a8a9a"
-        value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-      <TextInput style={styles.input} placeholder="Email" placeholderTextColor="#7a8a9a"
-        value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+      {/* toggle button — always visible */}
+      <Pressable style={styles.toggleButton} onPress={() => setShowAddClient(!showAddClient)}>
+        <Text style={styles.toggleButtonText}>
+          {showAddClient ? "✕ Close" : "+ Add a client"}
+        </Text>
+      </Pressable>
 
-      <View style={styles.formButtons}>
-        <Pressable style={styles.button} onPress={saveClient}>
-          <Text style={styles.buttonText}>{editingId === null ? "Add client" : "Update client"}</Text>
-        </Pressable>
-        {editingId !== null && (
-          <Pressable style={styles.cancelButton} onPress={resetForm}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
-        )}
-      </View>
+      {/* the add-client form — only shows when toggled on */}
+      {showAddClient ? (
+        <View>
+          <TextInput style={styles.input} placeholder="Client name" placeholderTextColor="#7a8a9a"
+            value={name} onChangeText={setName} />
+          <TextInput style={styles.input} placeholder="Address" placeholderTextColor="#7a8a9a"
+            value={address} onChangeText={setAddress} />
+          <TextInput style={styles.input} placeholder="Phone number" placeholderTextColor="#7a8a9a"
+            value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+          <TextInput style={styles.input} placeholder="Email" placeholderTextColor="#7a8a9a"
+            value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+
+          <View style={styles.formButtons}>
+            <Pressable style={styles.button} onPress={saveClient}>
+              <Text style={styles.buttonText}>{editingId === null ? "Add client" : "Update client"}</Text>
+            </Pressable>
+            {editingId !== null && (
+              <Pressable style={styles.cancelButton} onPress={resetForm}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </Pressable>
+            )}
+          </View>
+        </View>
+      ) : null}
 
       <Pressable style={styles.locateButton} onPress={locateClients} disabled={locating}>
         <Text style={styles.locateText}>{locating ? "Locating..." : "📍 Locate clients on map"}</Text>
@@ -162,6 +177,8 @@ const styles = StyleSheet.create({
   buttonText: { color: "#0e1a2b", fontSize: 16, fontWeight: "600" },
   cancelButton: { paddingVertical: 14, paddingHorizontal: 20, borderRadius: 10, borderWidth: 1, borderColor: "#33485f", alignItems: "center" },
   cancelText: { color: "#cccccc", fontSize: 16 },
+  toggleButton: { backgroundColor: "#4aa3df", alignItems: "center", paddingVertical: 14, borderRadius: 10, marginBottom: 16 },
+  toggleButtonText: { color: "#0e1a2b", fontSize: 16, fontWeight: "600" },
   locateButton: { backgroundColor: "#1b2a3d", borderWidth: 1, borderColor: "#4aa3df", alignItems: "center", paddingVertical: 12, borderRadius: 10, marginBottom: 16 },
   locateText: { color: "#4aa3df", fontSize: 15, fontWeight: "600" },
   list: { flex: 1 },
