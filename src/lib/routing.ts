@@ -20,14 +20,13 @@ export function buildRouteUrl(stops: Stop[]): string | null {
 }
 
 export function buildAppleRouteUrl(stops: Stop[]): string | null {
-    const located = stops.filter((s) => s.latitude !== null && s.longitude !== null);
-    if (located.length === 0) return null;
+  const located = stops.filter((s) => s.latitude !== null && s.longitude !== null);
+  if (located.length === 0) return null;
 
-    const coord = (c: Stop) => `${c.latitude},$c.longitude}`;
-
-    const destination = coord(located[located.length - 1]);
-
-    return `https://maps.apple.com/?daddr=${destination}&dirflg=d`;
+  const dest = located[located.length - 1];
+  const lat = Number(dest.latitude);
+  const lng = Number(dest.longitude);
+  return `https://maps.apple.com/?daddr=${lat}%2C${lng}&dirflg=d`;
 }
 
 export const MAX_RELIABLE_STOPS = 9;;
