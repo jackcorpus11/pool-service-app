@@ -29,6 +29,16 @@ export function buildAppleRouteUrl(stops: Stop[]): string | null {
   return `https://maps.apple.com/?daddr=${lat}%2C${lng}&dirflg=d`;
 }
 
+export function buildSingleStopGoogle(stop: Stop): string | null {
+  if (stop.latitude === null || stop.longitude === null) return null;
+  return `https://www.google.com/maps/dir/?api=1&destination=${Number(stop.latitude)},${Number(stop.longitude)}`;
+}
+
+export function buildSingleStopApple(stop: Stop): string | null {
+  if (stop.latitude === null || stop.longitude === null) return null;
+  return `https://maps.apple.com/?ll=${Number(stop.latitude)},${Number(stop.longitude)}&q=Stop&dirflg=d`;
+}
+
 export const MAX_RELIABLE_STOPS = 9;;
 
 function haversineDistance(
