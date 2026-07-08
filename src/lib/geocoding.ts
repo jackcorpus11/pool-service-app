@@ -3,8 +3,9 @@ export type Coords = { latitude: number; longitude: number };
 export async function geocodeAddress(address: string): Promise<Coords | null> {
     if (!address || address.trim() === "") return null;
 
-    const url = 
-    "https:/nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(address);
+    const url =
+  "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
+  encodeURIComponent(address);
 
     try {
         const response = await fetch(url, {
