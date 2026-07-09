@@ -56,6 +56,7 @@ function RootNavigator() {
       <Stack.Screen name="history" options={{ title: "Service History", headerLeft: backButton }} />
       <Stack.Screen name="settings" options={{ title: "Settings", headerLeft: backButton }} />
       <Stack.Screen name="quote/new" options={{ title: "New Quote", headerLeft: backButton }} />
+      <Stack.Screen name="quotes" options={{ title: "Quotes", headerLeft: backButton }} />
     </Stack>
   );
 }

@@ -26,10 +26,10 @@ export default function Home() {
         <Text style={styles.tileIcon}>📋</Text>
         <Text style={styles.tileText}>Service History</Text>
       </Pressable>
-      <Pressable style={styles.tile} onPress={() => router.push("/quote/new")}>
-  <Text style={styles.tileIcon}>📝</Text>
-  <Text style={styles.tileText}>New Quote</Text>
-</Pressable>
+      <Pressable style={styles.tile} onPress={() => router.push("/quotes")}>
+        <Text style={styles.tileIcon}>📝</Text>
+        <Text style={styles.tileText}>Quotes</Text>
+      </Pressable>
     </ScrollView>
   );
 }
