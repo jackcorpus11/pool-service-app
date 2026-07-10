@@ -104,3 +104,14 @@ export async function updatePool(id: string, details: Omit<Pool, "id" | "lastSer
   if (error) throw error;
   return rowToPool(data);
 }
+
+export async function fetchFirstPoolForClient(clientId: number): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("pools")
+    .select("id")
+    .eq("client_id", clientId)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? data.id : null;
+}

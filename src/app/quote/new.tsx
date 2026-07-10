@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { fetchClients } from "../../lib/clients";
 import { computeTotals } from "../../lib/invoices";
+import { fetchFirstPoolForClient } from "../../lib/pools";
 import { createQuote } from "../../lib/quotes";
 import { fetchSettings } from "../../lib/settings";
+import { createPendingVisit } from "../../lib/visits";
 import { Client } from "../../types/client";
 import { Part } from "../../types/invoice";
 
@@ -61,32 +63,46 @@ export default function NewQuote() {
   const { partsTotal, laborTotal, total } = computeTotals(parts, hours, rate);
 
   async function save() {
-    // must have either a selected client or a one-off name
-    if (!isOneOff && clientId === null) {
-      console.log("Pick a client or switch to one-off");
-      return;
+  if (!isOneOff && clientId === null) {
+    console.log("Pick a client or switch to one-off");
+    return;
+  }
+  if (isOneOff && oneoffName.trim() === "") {
+    console.log("Enter the customer's name");
+    return;
+  }
+  try {
+    let tentativeVisitId: string | null = null;   // ← DECLARED HERE
+
+    if (!isOneOff && clientId !== null && proposedDate.trim() !== "") {
+      console.log("Attempting pending visit — clientId:", clientId, "date:", proposedDate);
+      const poolId = await fetchFirstPoolForClient(clientId);
+      console.log("Pool lookup result:", poolId);
+      if (poolId) {
+        tentativeVisitId = await createPendingVisit(poolId, proposedDate.trim(), jobType);
+        console.log("Created pending visit:", tentativeVisitId);
+      } else {
+        console.log("Client has no pool — quote saved without a calendar visit");
+      }
     }
-    if (isOneOff && oneoffName.trim() === "") {
-      console.log("Enter the customer's name");
-      return;
-    }
-    try {
-      await createQuote({
-        clientId: isOneOff ? null : clientId,
-        oneoffName: isOneOff ? oneoffName.trim() : "",
-        oneoffPhone: isOneOff ? oneoffPhone.trim() : "",
-        oneoffEmail: isOneOff ? oneoffEmail.trim() : "",
-        jobType,
-        description: description.trim(),
-        parts,
-        laborHours: hours,
-        laborRate: rate,
-        proposedDate: proposedDate.trim() === "" ? null : proposedDate.trim(),
-      });
-      setSaved(true);
-    } catch (e) {
-      console.log("Error saving quote:", (e as Error).message);
-    }
+
+    await createQuote({
+      clientId: isOneOff ? null : clientId,
+      oneoffName: isOneOff ? oneoffName.trim() : "",
+      oneoffPhone: isOneOff ? oneoffPhone.trim() : "",
+      oneoffEmail: isOneOff ? oneoffEmail.trim() : "",
+      jobType,
+      description: description.trim(),
+      parts,
+      laborHours: hours,
+      laborRate: rate,
+      proposedDate: proposedDate.trim() === "" ? null : proposedDate.trim(),
+    }, tentativeVisitId);   // ← PASSED HERE
+
+    setSaved(true);
+  } catch (e) {
+    console.log("Error saving quote:", (e as Error).message);
+  }
   }
 
   if (saved) {

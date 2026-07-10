@@ -4,6 +4,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-na
 import { fetchClients } from "../lib/clients";
 import { deleteQuoteById, fetchQuotes, setQuoteStatus } from "../lib/quotes";
 import { fetchSettings } from "../lib/settings";
+import { confirmPendingVisit, removePendingVisit } from "../lib/visits";
 import { Client } from "../types/client";
 import { Quote } from "../types/quote";
 
@@ -89,9 +90,17 @@ export default function Quotes() {
   async function changeStatus(quote: Quote, status: string) {
     try {
       await setQuoteStatus(quote.id, status);
+
+      if (quote.tentativeVisitId) {
+        if (status === "approved") {
+          await confirmPendingVisit(quote.tentativeVisitId);
+        } else if (status === "declined") {
+          await removePendingVisit(quote.tentativeVisitId);
+        }
+      }
       setQuotes(quotes.map((q) => (q.id === quote.id ? { ...q, status } : q)));
     } catch (e) {
-      console.log("Error updating status:", (e as Error).message);
+      console.log("Error updating status", (e as Error).message);
     }
   }
 

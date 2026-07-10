@@ -32,7 +32,7 @@ export async function fetchQuotes(): Promise<Quote[]> {
     return data.map(rowToQuote);
 }
 
-export async function createQuote(input: QuoteInput): Promise<Quote> {
+export async function createQuote(input: QuoteInput, tentativeVisitId: string | null = null): Promise<Quote> {
     const { partsTotal, laborTotal, total } = computeTotals(input.parts, input.laborHours, input.laborRate);
 
     const { data, error } = await supabase
@@ -51,7 +51,8 @@ export async function createQuote(input: QuoteInput): Promise<Quote> {
             labor_total: laborTotal,
             total,
             proposed_date: input.proposedDate,
-            status: "draft"
+            status: "draft",
+            tentative_visit_id: tentativeVisitId,
         })
         .select()
         .single();

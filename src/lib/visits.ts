@@ -193,3 +193,34 @@ export async function fetchVisitContact(visitId: string): Promise<VisitContact> 
     email: c?.email ?? "",
   };
 }
+
+export async function createPendingVisit(poolId: string, date: string, jobType: string): Promise<string> {
+  const { data, error } = await supabase
+    .from("service_visits")
+      .insert({
+        pool_id: poolId,
+        visit_date: date,
+        status: "pending",
+        job_type: jobType,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data.id;
+}
+
+export async function confirmPendingVisit(visitId: string): Promise<void> {
+  const { error } = await supabase
+    .from("service_visits")
+    .update({ status: "scheduled " })
+    .eq("id", visitId);
+  if (error) throw Error;
+}
+
+export async function removePendingVisit(visitId: string): Promise<void> {
+  const { error } = await supabase
+    .from("service_visits")
+    .delete()
+    .eq("id", visitId);
+  if (error) throw error;
+}

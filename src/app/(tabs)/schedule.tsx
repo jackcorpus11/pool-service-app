@@ -20,7 +20,6 @@ import { ReadingInput } from "../../types/reading";
 
 const JOB_TYPES = ["cleaning", "liner change", "repair", "opening", "closing"];
 
-// the reading fields we show, in order
 const READING_FIELDS: { key: keyof ReadingInput; label: string }[] = [
   { key: "ph", label: "pH" },
   { key: "freeChlorine", label: "Free chlorine" },
@@ -47,7 +46,6 @@ export default function Schedule() {
   const [chosenType, setChosenType] = useState("cleaning");
   const [reschedulingId, setReschedulingId] = useState<string | null>(null);
 
-  // mark-done form
   const [completingVisitId, setCompletingVisitId] = useState<string | null>(null);
   const [reading, setReading] = useState<ReadingInput>(emptyReading);
   const [showMapChoice, setShowMapChoice] = useState(false);
@@ -66,9 +64,11 @@ export default function Schedule() {
     fetchAllPoolsWithClient().then(setPools).catch((e) => console.log("Error loading pools:", e.message));
   }, []);
 
+  // build the calendar dots - pending (tentative) visits get orange, confirmed ones blue
   const marked: Record<string, any> = {};
   for (const visit of visits) {
-    marked[visit.visitDate] = { marked: true, dotColor: "#4aa3df" };
+    const dotColor = visit.status === "pending" ? "#e0a458" : "#4aa3df";
+    marked[visit.visitDate] = { marked: true, dotColor };
   }
   if (selectedDate) {
     marked[selectedDate] = { ...(marked[selectedDate] || {}), selected: true, selectedColor: "#4aa3df" };
@@ -143,7 +143,6 @@ export default function Schedule() {
   async function saveComplete(visit: VisitWithDetails) {
     try {
       await completeVisit(visit.id, visit.poolId, visit.visitDate, reading);
-      // update local state: mark this visit done
       setVisits(visits.map((v) => (v.id === visit.id ? { ...v, status: "done" } : v)));
       setCompletingVisitId(null);
     } catch (error) {
@@ -151,7 +150,6 @@ export default function Schedule() {
     }
   }
 
-  // color for a reading's range status
   function rangeColor(status: string) {
     if (status === "good") return "#8fd6a0";
     if (status === "low" || status === "high") return "#e0a458";
@@ -190,10 +188,10 @@ export default function Schedule() {
     try {
       await Linking.openURL(url);
       setShowMapChoice(false);
-  } catch (error) {
+    } catch (error) {
       console.log("Error opening route URL:", (error as Error).message);
     }
-}
+  }
 
   return (
     <View style={styles.container}>
@@ -208,24 +206,24 @@ export default function Schedule() {
         style={styles.calendar}
       />
 
-         {selectedDate && dayVisits.length > 0 ? (
+      {selectedDate && dayVisits.length > 0 ? (
         <Pressable style={styles.routeButton} onPress={() => setShowMapChoice(!showMapChoice)}>
           <Text style={styles.routeText}>
-            {showMapChoice ? "✕ Close" : `🧭 Send Route to Maps (${dayVisits.length} stop${dayVisits.length > 1 ? "s" : ""})`}
+            {showMapChoice ? "x Close" : `Send Route to Maps (${dayVisits.length} stop${dayVisits.length > 1 ? "s" : ""})`}
           </Text>
         </Pressable>
       ) : null}
 
       {showMapChoice ? (
-      <View style={styles.mapChoiceBox}>
-        <Pressable style={styles.mapChoiceButton} onPress={sendRouteGoogle}>
-          <Text style={styles.mapChoiceText}>Google Maps</Text>
-        </Pressable>
-        <Pressable style={styles.mapChoiceButton} onPress={sendRouteApple}>
-          <Text style={styles.mapChoiceText}>Apple Maps</Text>
-        </Pressable>
-      </View>
-    ) : null}
+        <View style={styles.mapChoiceBox}>
+          <Pressable style={styles.mapChoiceButton} onPress={sendRouteGoogle}>
+            <Text style={styles.mapChoiceText}>Google Maps</Text>
+          </Pressable>
+          <Pressable style={styles.mapChoiceButton} onPress={sendRouteApple}>
+            <Text style={styles.mapChoiceText}>Apple Maps</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       <View style={styles.headingRow}>
         <Text style={styles.heading}>{selectedDate ? `Jobs on ${selectedDate}` : "Tap a day"}</Text>
@@ -267,13 +265,18 @@ export default function Schedule() {
         renderItem={({ item }) => {
           const isDone = item.status === "done";
           const isCompleting = completingVisitId === item.id;
+          const isPending = item.status === "pending";
+
           return (
-            <View style={[styles.jobCard, isDone && styles.jobCardDone]}>
+            <View style={[styles.jobCard, isDone && styles.jobCardDone, isPending && styles.jobCardPending]}>
+              {isPending ? (
+                <Text style={styles.tentativeBanner}>TENTATIVE - awaiting approval</Text>
+              ) : null}
               <View style={styles.jobTop}>
                 <Text style={styles.jobClient}>{item.clientName} {kindLabel(item.poolKind)}</Text>
-                {isDone ? <Text style={styles.doneCheck}>✓ Done</Text> : null}
+                {isDone ? <Text style={styles.doneCheck}>\Done</Text> : null}
               </View>
-              {item.clientAddress ? <Text style={styles.jobLine}>📍 {item.clientAddress}</Text> : null}
+              {item.clientAddress ? <Text style={styles.jobLine}>{item.clientAddress}</Text> : null}
               <Text style={styles.jobKind}>{kindLabel(item.poolKind)}</Text>
 
               {editingVisitId === item.id ? (
@@ -286,12 +289,11 @@ export default function Schedule() {
                 </View>
               ) : (
                 <Pressable onPress={() => setEditingVisitId(item.id)}>
-                  <Text style={styles.jobType}>{item.jobType}  ✎</Text>
+                  <Text style={styles.jobType}>{item.jobType}</Text>
                 </Pressable>
               )}
 
-              {/* main footer — Mark done / status, plus Reschedule / Skip / Remove / Invoice */}
-              {!isCompleting && reschedulingId !== item.id ? (
+              {!isCompleting && reschedulingId !== item.id && !isPending ? (
                 <View style={styles.jobFooter}>
                   {item.status === "done" ? (
                     <Text style={styles.jobStatus}>completed</Text>
@@ -319,13 +321,12 @@ export default function Schedule() {
                       <Text style={styles.removeText}>Remove</Text>
                     </Pressable>
                     <Pressable onPress={() => router.push(`/invoice/${item.id}`)}>
-                      <Text style={styles.addJobText}>💵 Invoice</Text>
+                      <Text style={styles.addJobText}>Invoice</Text>
                     </Pressable>
                   </View>
                 </View>
               ) : null}
 
-              {/* reschedule calendar */}
               {reschedulingId === item.id ? (
                 <View style={styles.rescheduleBox}>
                   <Text style={styles.rescheduleLabel}>Pick a new date:</Text>
@@ -343,7 +344,6 @@ export default function Schedule() {
                 </View>
               ) : null}
 
-              {/* mark-done readings form */}
               {isCompleting ? (
                 <View style={styles.readingForm}>
                   <Text style={styles.formLabel}>Chemical readings</Text>
@@ -360,7 +360,7 @@ export default function Schedule() {
                           value={value === null ? "" : String(value)}
                           onChangeText={(t) => setReadingField(field.key, t)}
                           keyboardType="numeric"
-                          placeholder="—"
+                          placeholder="-"
                           placeholderTextColor="#556"
                         />
                         <Text style={[styles.readingStatus, { color: rangeColor(status) }]}>
@@ -418,6 +418,8 @@ const styles = StyleSheet.create({
   saveJobText: { color: "#0e1a2b", fontSize: 15, fontWeight: "600" },
   jobCard: { backgroundColor: "#1b2a3d", padding: 16, borderRadius: 10, marginBottom: 10 },
   jobCardDone: { opacity: 0.6 },
+  jobCardPending: { borderWidth: 1, borderColor: "#e0a458", borderStyle: "dashed" },
+  tentativeBanner: { color: "#e0a458", fontSize: 13, fontWeight: "bold", marginBottom: 8, letterSpacing: 0.5 },
   jobTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   jobClient: { color: "#ffffff", fontSize: 17, fontWeight: "600" },
   doneCheck: { color: "#8fd6a0", fontSize: 14, fontWeight: "600" },
